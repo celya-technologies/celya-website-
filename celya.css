@@ -180,6 +180,8 @@ ul,ol{padding-left:1.2em;margin:0 0 1em}
   /* la racine seule : un overflow sur body en ferait un conteneur de défilement et
      décrocherait l'en-tête collant des articles */
   html.mnav-open{overflow:hidden}
+  /* accueils : l'étiquette du héros ne passe pas par-dessus le voile du menu */
+  body.mnav-open .hv-tag{visibility:hidden}
 }
 @media (min-width:721px) and (max-width:1180px){.mnav{left:auto;width:420px}}
 @media (max-width:720px){
