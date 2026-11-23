@@ -360,7 +360,10 @@ Brief : `docs/maquettes-16-11/PROMPT-conversion-16-11.md`, aperçu validé
   bénéficie.** Pas de `backdrop-filter`, pas de `filter`, pas d'ombre : la
   transparence est un voile, jamais un flou. Les pages d'atterrissage n'ont
   **pas** l'effet au défilement des accueils (`data-hv="lp"`) : l'exception
-  d'opacité du 15/11 reste aux seuls accueils. Contraste mesuré par
+  d'opacité du 15/11 reste aux seuls accueils (le 23/11/2026, l'effet au
+  défilement s'étend à la **scène** de ces pages, pas à leur héros). Depuis le
+  23/11/2026, le héros porte le H1, la pastille de l'appel et les deux
+  boutons, et le formulaire n'est dans le héros qu'au-dessus de 860 px. Contraste mesuré par
   `tests/heros.mjs` (H1, phrase, libellés du formulaire ≥ 4,5 sur le pixel le
   plus clair de la vidéo, à 360, 390, 768 et 1440 px) ; pour tenir 4,5 sur
   la partie orange du H1 à 360 × 640, le voile mobile de l'aperçu est renforcé
@@ -396,7 +399,8 @@ Brief : `docs/maquettes-16-11/PROMPT-conversion-16-11.md`, aperçu validé
   exemple daté du jeudi 19 novembre. Placée sous les badges des accueils, des
   pages métiers et des pages d'atterrissage ; en version compacte (téléphone
   seul) après la première section des articles. Vérifiée par `tests/scene.mjs`.
-- **Pages d'atterrissage, dans cet ordre** : héros, badges, scène, Comment ça
+- **Pages d'atterrissage, dans cet ordre** (remplacé le 23/11/2026, voir le
+  lot « site mobile » ci-dessous) : héros, badges, scène, Comment ça
   marche (quatre étapes, `ol.steps`), les cases RDV pris / À rappeler /
   Urgent, « Appelez-la, comme un client » (`tryCall()`), prix, FAQ en cinq
   questions (« Vos questions, nos réponses »), appel final. Les trois
@@ -433,9 +437,9 @@ Brief : `docs/maquettes-16-11/PROMPT-conversion-16-11.md`, aperçu validé
   `celya.css`, `innerWidth>1180` dans `celya.js` : les deux ensemble), comme
   avant le 19/11. Mesuré : l'en-tête FR complet tient dès 1065 px, NL dès 985,
   EN dès 950 ; 1180 laisse 115 px de marge.
-- **Menu mobile**, avant le choix de langue : « Essai gratuit · 14 jours »
-  (pleine largeur, orange), « Demander une démo » (contour), « Se connecter »
-  (lien centré). **Pied de page** : « Se connecter » après Contact dans la
+- **Menu mobile** (refait le 23/11/2026, voir le lot « site mobile »
+  ci-dessous) : « Essai gratuit · 14 jours » (pleine largeur, orange) ; « Se
+  connecter » ; plus de « Demander une démo » dans le panneau. **Pied de page** : « Se connecter » après Contact dans la
   colonne Entreprise / Bedrijf / Company (`foot_cols[].login` dans
   `data/i18n.json`).
 - **Sous chaque grille de prix** (hors pages d'atterrissage, composant
@@ -446,6 +450,108 @@ Brief : `docs/maquettes-16-11/PROMPT-conversion-16-11.md`, aperçu validé
   l'écouteur de clic existant de `celya.js` (`a[data-app]`, `data-place`),
   seulement avec l'accord cookies, comme les autres événements. `click_call`
   et `generate_lead` ne changent pas ; le bloc consentement non plus.
+
+**Lot « site mobile » du 23 novembre 2026 (décisions de Bora).** Brief du
+23/11/2026 ; la maquette jointe (`maquette-mobile-23-11.patch`, sur `5ab3480`)
+et les vidéos `parcours-telephone.mp4` / `parcours-ordinateur.mp4` ne sont pas
+arrivées dans la session qui a construit le lot : il suit le brief, et la
+prévisualisation de la PR fait foi. Le site était trop chargé
+sur téléphone : un menu simple, des pages des pubs qui montrent le produit, une
+scène qui raconte l'appel pendant qu'on descend.
+
+**Les quatre exceptions datées de ce lot :**
+
+1. **Composants nouveaux** : le menu mobile en accordéon, la pastille de
+   l'appel, la scène pilotée au défilement et le carrousel des prix sont
+   autorisés pour ce lot. **Après le lot, la règle « aucun composant visuel
+   nouveau » reprend.**
+2. **Le héros des pages d'atterrissage** contient le H1, la pastille de
+   l'appel et les deux boutons. La pastille remplace la phrase (« Pendant que
+   vous êtes sous la voiture… » et ses équivalents, retirées des sources et
+   listées dans `tests/corrections-autorisees.json`).
+3. **L'effet au défilement**, jusqu'ici réservé aux accueils, s'étend à la
+   **scène** des quatre pages d'atterrissage. Seulement `transform` et
+   `opacity` ; aucun `filter`, `backdrop-filter` ni `will-change` ajouté ;
+   piloté par l'écouteur `onScroll` unique de `celya.js` à partir de mesures en
+   cache (`drect()`), aucune mesure de mise en page dans la boucle.
+4. **Le nouvel ordre des pages d'atterrissage** remplace celui du lot du
+   16/11 : héros (H1, pastille, deux boutons, vidéo) · badges · la scène qui
+   suit le doigt · le formulaire (sous 860 px ; au-dessus, il reste dans le
+   héros) · « Chaque appel, rangé dans la bonne case » · les prix (en
+   carrousel sous 720 px) · la FAQ · l'appel final. « Comment ça marche » (il
+   redit la scène) et « Appelez-la, comme un client » (l'appel final dit la
+   même chose) quittent ces pages (`tests/corrections-autorisees.json`,
+   `h2_retires` et `texte`). Vérifié par `tests/lp.mjs`.
+
+**Ce que le lot a fixé :**
+
+- **Menu mobile** (toutes les pages avec menu, FR, NL, EN ; `shell.mjs`) : les
+  entrées de l'en-tête de l'ordinateur, dans le même ordre, une ligne chacune
+  en 18 px séparées par un filet ; « Votre métier » s'ouvre sur place
+  (`<details class="mnav-met">`) : les métiers en deux colonnes puis « Tous
+  les métiers → », tous les liens écrits dans le HTML. En bas, un seul bouton,
+  « Essai gratuit · 14 jours », puis sur une ligne « Se connecter » à gauche
+  et FR / NL / EN à droite ; « Demander une démo » reste dans l'en-tête. Le
+  panneau se pose sous l'en-tête, la liste défile seule et les actions du bas
+  restent visibles ; il ne descend jamais sous le bandeau cookies
+  (`--cbanner-h`). Voile sombre derrière (`.mnav-veil`, un fond `rgba`, jamais
+  de flou). Le bouton devient une croix et son `aria-label` passe de « Menu »
+  à « Fermer » (`data-open` / `data-close`). Un appui sur le voile, sur un
+  lien ou Échap ferme le menu : un seul écouteur de clic délégué, le nombre
+  d'`addEventListener` de `celya.js` ne bouge pas (`tests/attribution.mjs`).
+  La page derrière ne défile pas : `overflow:hidden` sur la **racine seule**
+  (`html.mnav-open`) ; sur `body`, il en ferait un conteneur de défilement et
+  décrocherait l'en-tête collant des articles. La barre d'appel du bas se
+  cache. Zones d'appui de 44 px au moins. Vérifié par `tests/acces-app.mjs`
+  (bloc `mnav`, et ses mutants).
+- **La pastille de l'appel** (`livePill()`, `blocks.mjs`) : sous le H1,
+  au-dessus du bouton d'appel, sur ordinateur comme sur téléphone ; quatre
+  états (`data/i18n.json`, clé `live`, `[titre, détail]`) dans la même case de
+  grille, boucle de 10 s en CSS seul (`@keyframes lc`), le C animé de la marque
+  à gauche ; en pause hors écran (`.anim-off`) ; sous `prefers-reduced-motion`,
+  « Rendez-vous pris » seul et fixe. Fond plein, aucun flou, aucune ombre. Le
+  texte entier est lu par les lecteurs d'écran (`.sr`).
+- **Le formulaire de démo** (`demoForm()`, `demo.html` et pages
+  d'atterrissage) : nom, téléphone et métier visibles ; l'e-mail, le moment de
+  rappel et le message repliés sous « Ajouter un détail (facultatif) » (NL
+  « Meer vertellen », EN « Add a detail ») ; un champ replié invalide s'ouvre
+  avant de recevoir le focus. L'envoi ne change pas : mêmes champs, mêmes
+  noms, même ordre, même web-lead, même honeypot (`tests/formulaire.mjs`).
+  `contact.html` a son propre formulaire (nom, société, téléphone **ou**
+  e-mail) : il n'est pas touché par ce lot.
+- **Pages d'atterrissage : le formulaire** est écrit une fois, dans sa section
+  (`section.lpf`), après la scène. Au-dessus de 860 px, `<main>` devient une
+  grille d'une colonne et cette section partage la première rangée avec le
+  héros : le formulaire reprend la colonne droite du héros, en transparence,
+  comme avant. Le bouton « Être rappelé pour une démo » du héros y mène. La
+  barre d'appel du bas se cache tant que le formulaire est à l'écran et
+  pendant la scène (`[data-mbar-hide]`, `celya.js`).
+- **La scène qui suit le doigt** (`scene(…, { drive: true })`, pages
+  d'atterrissage seulement ; téléphone et ordinateur) : le téléphone se fixe à
+  l'écran (`position: sticky`) pendant environ 2,75 hauteurs d'écran. Les
+  animations de la scène sont coupées et `celya.js` pose trois variables à
+  chaque défilement : `--t` (l'instant, en secondes de la boucle de 15 s),
+  `--p` (l'écran affiché, à virgule pendant le glissement) et `--pr`
+  (l'avancée, de 0 à 1). Les écrans glissent de droite à gauche sur le dernier
+  quart de chaque étape, le sortant s'efface en glissant ; dans une étape, les
+  bulles et les lignes arrivent l'une après l'autre (`--r`, leur seuil) ;
+  chaque écran arrive avec sa première bulle. Ordinateur : la liste à côté,
+  l'étape en cours surlignée, un rail orange qui relie les points et se
+  remplit. Téléphone : une légende sous l'écran (titre et phrase de l'étape,
+  qui glisse) et une fine barre orange ; la liste est masquée à l'œil mais
+  reste lue. Si on remonte, tout se rejoue à l'envers ; si on s'arrête, tout
+  s'arrête. **Rien de tout ça sous `prefers-reduced-motion` ni sous 600 px de
+  haut** : la scène d'avant (boucle de 15 s). Le titre de la scène (étiquette
+  et H3) passe au-dessus de la piste sur ces pages. Vérifié par
+  `tests/scene.mjs`.
+- **Les prix des pages d'atterrissage, en carrousel sous 720 px**
+  (`prices(…, { swipe: true })`) : une carte par écran, `scroll-snap`, les
+  voisines qui dépassent, la carte Pro au centre au départ (une fois, au
+  chargement) et trois points dessous (suivis par `IntersectionObserver`,
+  aucun écouteur de défilement de plus). Au-dessus de 720 px, rien ne change.
+- **Corrigé en passant** : sur les accueils, la vidéo grossie au défilement
+  (×1,06) dépassait de la page en largeur dès qu'on descendait (371 px pour
+  360) ; le héros coupe désormais en largeur seulement (`overflow-x:clip`).
 
 **Lot « prêt pour les publicités » du 17 novembre 2026 (décisions de Bora,
 même PR #34).** Le site reçoit du trafic payant (Google Ads, Meta Ads). La
@@ -540,9 +646,12 @@ ci-dessus reprend après ce lot.
 - **Les apparitions** : état de repos visible, `translateY(12px) → 0` en
   400 ms (`--ease-reveal`), **aucune opacité animée** au-dessus de la ligne de
   flottaison ; les tracés qui se dessinent restent.
-- **Pas de numéro d'eyebrow** (`.kick > b` numérique) ; seuls les 1-2-3-4 du
-  parcours d'appel, les étapes d'installation et le diagnostic gardent leurs
-  chiffres.
+- **Pas de numéro d'eyebrow** (`.kick > b` numérique) ; seuls les étapes
+  d'installation et le diagnostic de la page prix gardent leurs chiffres.
+  **Depuis le 23/11/2026 (décision de Bora), le parcours d'un appel n'a plus
+  de chiffres** : ni « 1 · » dans le téléphone de la scène, ni compteur dans
+  sa liste, ni grand chiffre sur les cartes de « Comment ça marche »
+  (`ol.steps`) ; un point orange de 8 px, aligné sur la première ligne.
 - **Tuiles métiers** : quatre par rangée, `aspect-ratio 3/4`, duotone par
   `filter` sur une image **qui ne bouge plus** (le zoom au survol a disparu :
   un filtre sur un élément animé est interdit), carrousel `scroll-snap` sous
@@ -678,18 +787,18 @@ node tests/seo-avant-apres.mjs       # title, description, H1, H2, FAQ, hreflang
 node tests/offre.mjs                 # aucun montant ni durée d'essai hors data/offre.json, plus d'ancienne grille ni d'essai de 30 jours
 node tests/tailles.mjs               # 12 px (libellés) / 14 px (phrases) minimum
 node tests/heros.mjs                 # premier écran, contraste sur la vidéo, pause, poids (accueils + LP)
-node tests/formulaire.mjs            # formulaire démo, UTM, dataLayer, barre mobile
+node tests/formulaire.mjs            # formulaire démo (facultatif replié, 23/11), UTM, dataLayer, barre mobile
 node tests/budget-rendu.mjs          # backdrop-filter, will-change, keyframes, rAF, écouteurs
 node tests/consentement.mjs          # bloc consentement + GTM identique à l'octet (hors texte du message, 17/11/2026)
 node tests/migration.mjs             # toute page servie sur le nouveau gabarit (16/11/2026)
 node tests/texte-conserve.mjs        # aucun paragraphe perdu par la migration
 node tests/outils.mjs                # modèles, check-lists, grilles, calculateurs répondent
-node tests/scene.mjs                 # la scène : placement, textes par métier, pause, mouvement réduit
-node tests/lp.mjs                    # pages d'atterrissage : ordre des blocs, formulaire, liens, barre mobile
+node tests/scene.mjs                 # la scène : placement, textes, pause, mouvement réduit, aucun chiffre, pilotée au défilement (23/11)
+node tests/lp.mjs                    # pages d'atterrissage : ordre (23/11), pastille, formulaire, carrousel des prix, barre mobile
 node tests/dates.mjs                 # chaque jour de la semaine correspond à sa date (2026 par défaut)
 node tests/attribution.mjs           # UTM / gclid / fbclid : session sans accord, 90 jours après « Accepter », rien après « Refuser »
 node tests/tiret-long.mjs            # aucun tiret long dans les fichiers servis, _src/ et data/ (19/11/2026)
-node tests/acces-app.mjs             # Se connecter / Essai gratuit : liens, ordre, cadre, événements (19/11/2026)
+node tests/acces-app.mjs             # Se connecter / Essai gratuit, menu mobile (23/11) : liens, ordre, cadre, fermeture, événements
 node tests/acces-app.mjs --mutants   # chaque vérification ci-dessus crie sur une copie cassée
 ```
 

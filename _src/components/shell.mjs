@@ -116,10 +116,17 @@ ${callBtn(c, 'btn-orange btn-sm hdr-call')}
   const nav = t.nav.map((n) => n.drop
     ? `<div class="drop"><a class="drop-t" href="${L(n.href)}">${n.label}${ico.chev}</a><div class="drop-p">${drop}</div></div>`
     : `<a href="${L(n.href)}">${n.label}</a>`).join('');
-  const mnav = t.nav.filter((n) => !n.drop).map((n) => `<a href="${L(n.href)}">${n.label}</a>`).join('') +
-    `<b class="mnav-h">${t.nav.find((n) => n.drop).label}</b><div class="mnav-grid">${t.metiers_nav.map(([h, l]) => `<a href="${L(h)}">${l}</a>`).join('')}</div>` +
-    (t.metiers_all ? `<a href="${L(t.metiers_all[0])}">${t.metiers_all[1]}</a>` : '') +
-    `<div class="mnav-app">${trialBtn(c, 'btn-orange', 'menu', t.trial_menu)}${demoBtn(c, 'btn-line')}${loginLink(c, 'mnav-login', 'menu')}</div>`;
+  /* menu mobile (23/11/2026, décision de Bora) : les entrées de l'en-tête de
+   * l'ordinateur, dans le même ordre, une ligne chacune ; « Votre métier »
+   * s'ouvre sur place (<details>), ses liens restent écrits dans le HTML ; en
+   * bas, un seul bouton (l'essai), puis « Se connecter » et les langues sur une
+   * ligne. « Demander une démo » reste dans l'en-tête, pas dans le panneau. */
+  const mlist = t.nav.map((n) => n.drop
+    ? `<details class="mnav-met"><summary>${n.label}${ico.chev}</summary><div class="mnav-grid">${t.metiers_nav.map(([h, l]) => `<a href="${L(h)}">${l}</a>`).join('')}</div>` +
+      (t.metiers_all ? `<a class="mnav-all" href="${L(t.metiers_all[0])}">${t.metiers_all[1]} ${ico.arrow}</a>` : '') + '</details>'
+    : `<a href="${L(n.href)}">${n.label}</a>`).join('');
+  const mnav = `<div class="mnav-list">${mlist}</div>` +
+    `<div class="mnav-app">${trialBtn(c, 'btn-orange', 'menu', t.trial_menu)}<div class="mnav-foot">${loginLink(c, 'mnav-login', 'menu')}${langSwitch(c, 'mnav-lang')}</div></div>`;
   /* en-tête (19/11/2026, décision de Bora) : « Se connecter » en lien texte et un
    * seul bouton, « Demander une démo » en orange (la conversion principale).
    * « Essai gratuit » vit sous les grilles de prix et dans le menu mobile ;
@@ -129,9 +136,10 @@ ${callBtn(c, 'btn-orange btn-sm hdr-call')}
 <nav class="hdr-nav" aria-label="Navigation">${nav}</nav>
 ${langDrop(c)}
 <div class="hdr-cta">${loginLink(c, 'hdr-login', 'header')}${demoBtn(c, 'btn-orange btn-sm hdr-demo')}</div>
-<button class="burger" type="button" aria-expanded="false" aria-controls="mnav"><span class="burger-l">${t.menu}</span><i></i><i></i></button>
+<button class="burger" type="button" aria-expanded="false" aria-controls="mnav" aria-label="${esc(t.menu)}" data-open="${esc(t.menu)}" data-close="${esc(t.close)}"><span class="burger-l" aria-hidden="true">${t.menu}</span><i></i><i></i></button>
 </div>
-<nav class="mnav" id="mnav" aria-label="Menu">${mnav}${langSwitch(c, 'mnav-lang')}</nav>
+<nav class="mnav" id="mnav" aria-label="${esc(t.menu)}">${mnav}</nav>
+<div class="mnav-veil" aria-hidden="true"></div>
 </header>`;
 }
 

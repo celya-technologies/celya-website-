@@ -21,6 +21,18 @@
  *  7. prefers-reduced-motion : aucune animation, l'état final fixe, les cinq
  *     étapes visibles, empilées sans se chevaucher.
  *
+ * Lot « site mobile » du 23/11/2026 (décisions de Bora) :
+ *  8. plus aucun numéro : ni « 1 · » dans le téléphone, ni compteur dans la
+ *     liste (un point orange de 8 px) ;
+ *  9. pages d'atterrissage : la scène suit le doigt (1440, 1280, 390, 360 px) :
+ *     téléphone fixé à l'écran (sticky) sur environ 2,75 hauteurs d'écran ;
+ *     plus aucune animation qui tourne ; --t, --p, --pr posés par celya.js ;
+ *     l'écran affiché suit l'avancée, glisse de droite à gauche, arrive avec
+ *     sa première bulle ; à l'envers en remontant ; ordinateur : étape en cours
+ *     surlignée et rail qui se remplit ; téléphone : légende et barre, liste
+ *     masquée à l'œil mais lue ; rien ne dépasse ; sous mouvement réduit et
+ *     sous 600 px de haut, la scène d'avant.
+ *
  *   node tests/scene.mjs */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -57,7 +69,7 @@ for (const rel of rels) {
   const place = {
     accueil: /<section class="hv-next">[\s\S]*?<\/section>\s*<section class="sec scn-sec">/,
     metier: /<section class="hero-badges">[\s\S]*?<\/section>\s*<section class="sec scn-sec">/,
-    lp: /<section class="hero-badges">[\s\S]*?<\/section>\s*<section class="sec scn-sec">[\s\S]*?<\/section>\s*<section class="sec" id="marche">/,
+    lp: /<section class="hero-badges">[\s\S]*?<\/section>\s*<section class="sec scn-sec scn-drive"[\s\S]*?<\/section>\s*<section class="lpf"/,
   }[L];
   if (L === 'article') {
     /* juste après la première section de la page source (un outil ou une FAQ
@@ -70,7 +82,9 @@ for (const rel of rels) {
     const lastSec = before.slice(before.lastIndexOf('<section class="art-s"'));
     ok(/<\/section>\s*$/.test(lastSec) && dec(lastSec.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').includes(snip), `${rel} : scène compacte juste après la première section`);
   } else ok(place.test(main), `${rel} : scène à sa place (${L})`);
-  const sc = L === 'article' ? /<figure class="scn scn-compact"[\s\S]*?<\/figure>/.exec(main)[0] : /<section class="sec scn-sec">[\s\S]*?<\/section>/.exec(main)[0];
+  const sc = L === 'article' ? /<figure class="scn scn-compact"[\s\S]*?<\/figure>/.exec(main)[0] : /<section class="sec scn-sec[^"]*"[\s\S]*?<\/section>/.exec(main)[0];
+  ok(!/>\s*\d+\s*·/.test(sc) && !/class="scn-tag">\d/.test(sc), `${rel} : aucun numéro dans le parcours (« 1 · … »)`);
+  ok((L === 'lp') === /data-scn-drive/.test(sc), `${rel} : scène ${L === 'lp' ? 'pilotée au défilement' : 'en boucle'}`);
   const t = data.i18n[meta.lang];
   const metier = L === 'metier' || L === 'lp' ? meta.metier : null;
   const ex = (metier && data.metiers[metier][meta.lang].scene) || t.scene.generique;
@@ -88,6 +102,9 @@ for (const [k, M] of Object.entries(data.metiers)) {
   if (k === '_doc') continue;
   for (const [lang, page] of Object.entries(M.pages)) if (page) ok(M[lang] && M[lang].scene && M[lang].scene.appel.length === 3, `data/metiers.json : ${k}.${lang}.scene`);
 }
+/* 8. aucun compteur dans le CSS du parcours */
+const cssAll = fs.readFileSync(path.join(ROOT, 'celya.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+ok(!/\.(scn-steps|steps) li::before\{[^}]*counter\(/.test(cssAll) && /\.steps li::before\{content:"";[^}]*width:8px;height:8px[^}]*background:var\(--o\)/.test(cssAll) && /\.scn-steps li::before\{content:"";[^}]*width:8px;height:8px[^}]*background:var\(--o\)/.test(cssAll), 'CSS : « Comment ça marche » et la liste de la scène sans compteur, un point orange de 8 px');
 console.log(`Statique : scènes — accueils ${count.accueil}, métiers ${count.metier}, atterrissage ${count.lp}, articles ${count.article} ; aucune ailleurs.`);
 
 /* ---------- 4-7. Chromium ---------- */
@@ -103,7 +120,7 @@ const base = `http://127.0.0.1:${srv.address().port}/`;
 const browser = await chromium.launch();
 const KF = new Set(['scn', 'scn-in', 'scn-slide', 'scn-hi']);
 /* les contrôles d'animation : un accueil FR et EN, une page métier, deux pages d'atterrissage, un article */
-const ANIM = new Set(['index.html', 'en/index.html', 'garages.html', 'lp/garages.html', 'nl/lp/garages.html', runtime.find((r) => r.L === 'article').rel]);
+const ANIM = new Set(['index.html', 'en/index.html', 'garages.html', runtime.find((r) => r.L === 'article').rel]);
 const anims = () => {
   const r = document.querySelector('[data-anim-root]');
   return r.getAnimations({ subtree: true }).map((a) => ({ name: a.animationName, state: a.playState, t: a.currentTime, d: a.effect.getTiming().duration }));
@@ -151,7 +168,7 @@ for (const [w, h] of [[1440, 900], [360, 640]]) {
 {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   await ctx.addInitScript(() => { try { localStorage.setItem('celya-consent', 'denied'); } catch (e) {} });
-  for (const { rel } of runtime.filter((r) => /^(index|nl\/garages|lp\/garages|en\/index)\.html$/.test(r.rel) || r.L === 'article')) {
+  for (const { rel } of runtime.filter((r) => /^(index|nl\/garages|lp\/garages|nl\/lp\/garages|en\/index)\.html$/.test(r.rel) || r.L === 'article')) {
     const p = await ctx.newPage();
     await p.goto(base + rel, { waitUntil: 'load' });
     const r = await p.evaluate(() => {
@@ -162,10 +179,72 @@ for (const [w, h] of [[1440, 900], [360, 640]]) {
       return { n: root.getAnimations({ subtree: true }).length, vis, stacked: box.every((b, i) => i === 0 || b.top >= box[i - 1].bottom - 0.5), tag: getComputedStyle(root.querySelector('.ex-tag')).display !== 'none' };
     });
     ok(r.n === 0, `${rel} (mouvement réduit) : aucune animation (${r.n})`);
+    if (/lp\//.test(rel)) ok(await p.evaluate(() => !document.querySelector('.scn-on') && getComputedStyle(document.querySelector('.scn-pin')).position === 'static' && !document.querySelector('[data-scn-drive]').style.cssText), `${rel} (mouvement réduit) : la scène ne suit pas le doigt (rien de fixé, aucune variable)`);
     ok(r.vis && r.stacked && r.tag, `${rel} (mouvement réduit) : état final fixe, cinq étapes visibles et empilées, « Exemple » affiché`);
     await p.close();
   }
   await ctx.close();
+}
+/* 9. la scène qui suit le doigt (pages d'atterrissage) */
+{
+  const state = (p) => p.evaluate(() => {
+    const sec = document.querySelector('[data-scn-drive]'), ph = sec.querySelector('.scn-ph'), body = sec.querySelector('.scn-body').getBoundingClientRect();
+    const st = [...sec.querySelectorAll('.scn-st')].map((s) => { const b = s.getBoundingClientRect(), o = +getComputedStyle(s).opacity; const first = s.querySelector('.scn-in, .scn-cal'); return { o, left: b.left - body.left, w: body.width, first: first ? +getComputedStyle(first).opacity : 1 }; });
+    const shown = st.map((x, i) => [i, x]).filter(([, x]) => x.o > 0.5 && x.left > -x.w / 2 && x.left < x.w / 2).map(([i]) => i);
+    const hi = [...sec.querySelectorAll('.scn-hi')].map((x) => +getComputedStyle(x).opacity);
+    const rl = [...sec.querySelectorAll('.scn-rl')].map((x) => new DOMMatrix(getComputedStyle(x).transform).d);
+    const capi = [...sec.querySelectorAll('.scn-cap-in p')].map((x) => +getComputedStyle(x).opacity);
+    const cap = getComputedStyle(sec.querySelector('.scn-cap')).display !== 'none';
+    const list = sec.querySelector('.scn-steps').getBoundingClientRect();
+    const bar = document.querySelector('.mbar');
+    return { on: sec.classList.contains('scn-on'), vars: ['--t', '--p', '--pr'].map((k) => sec.style.getPropertyValue(k)), phTop: Math.round(ph.getBoundingClientRect().top), shown, firstOk: st.every((x) => x.o < 0.05 || x.left >= x.w - 1 || x.first > 0.95), running: sec.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length, hi, rl, cap, capi, listW: list.width, sw: document.documentElement.scrollWidth, vw: innerWidth, mbar: bar ? getComputedStyle(bar).visibility !== 'hidden' && bar.getBoundingClientRect().top < innerHeight : false };
+  });
+  const goto = (p, pr) => p.evaluate((pr) => { const t = document.querySelector('.scn-track'), pin = document.querySelector('.scn-pin'); scrollTo(0, t.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(pin).top) + (t.offsetHeight - pin.offsetHeight) * pr); }, pr);
+  for (const rel of ['lp/garages.html', 'nl/lp/geen-oproepen-meer-missen.html']) {
+    for (const [w, h] of [[1440, 900], [1280, 720], [390, 844], [360, 640]]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+      await ctx.addInitScript(() => { try { localStorage.setItem('celya-consent', 'granted'); } catch (e) {} });
+      await ctx.route('**/*', (r) => (r.request().url().startsWith('http://127.0.0.1') ? r.continue() : r.abort()));
+      const p = await ctx.newPage();
+      await p.goto(base + rel, { waitUntil: 'load' });
+      await p.evaluate(() => document.fonts.ready);
+      const tag = `${rel} @${w}×${h}`;
+      const run = await p.evaluate(() => { const t = document.querySelector('.scn-track'), pin = document.querySelector('.scn-pin'); return (t.offsetHeight - pin.offsetHeight) / innerHeight; });
+      ok(run > 2.6 && run < 2.9, `${tag} : téléphone fixé sur ${run.toFixed(2)} hauteurs d'écran (environ 2,75)`);
+      const seen = [];
+      for (const [pr, want] of [[0.05, 0], [0.3, 1], [0.5, 2], [0.7, 3], [0.95, 4], [0.5, 2], [0.1, 0]]) {
+        await goto(p, pr); await p.waitForTimeout(250);
+        const r = await state(p); seen.push(r);
+        ok(r.on && r.vars.every((v) => v !== '') && r.running === 0, `${tag} pr=${pr} : pilotée (--t ${r.vars[0]}, --p ${r.vars[1]}, --pr ${r.vars[2]}), aucune animation qui tourne`);
+        ok(r.shown.length === 1 && r.shown[0] === want, `${tag} pr=${pr} : écran ${want + 1} affiché (${r.shown.join(',')})`);
+        ok(r.firstOk, `${tag} pr=${pr} : chaque écran visible a sa première bulle`);
+        ok(r.sw === r.vw, `${tag} pr=${pr} : rien ne dépasse (${r.sw})`);
+        if (w > 860) ok(r.hi.indexOf(Math.max(...r.hi)) === want && Math.max(...r.hi) > 0.95 && !r.cap, `${tag} pr=${pr} : l'étape ${want + 1} surlignée dans la liste, pas de légende`);
+        else ok(r.cap && r.capi.indexOf(Math.max(...r.capi)) === want && Math.max(...r.capi) > 0.95 && r.listW <= 1, `${tag} pr=${pr} : légende de l'étape ${want + 1}, liste masquée à l'œil`);
+        if (w < 720) ok(!r.mbar, `${tag} pr=${pr} : barre d'appel cachée pendant la scène`);
+      }
+      ok(new Set(seen.map((r) => r.phTop)).size === 1, `${tag} : le téléphone ne bouge pas pendant la scène (top ${[...new Set(seen.map((r) => r.phTop))].join(', ')})`);
+      if (w > 860) ok(seen[2].rl.map((x) => x.toFixed(1)).join() === '1.0,1.0,0.5,0.0' && seen[4].rl.every((x) => x === 1) && seen[0].rl.every((x) => x < 0.3), `${tag} : le rail se remplit avec l'avancée (${seen.map((r) => r.rl.map((x) => x.toFixed(1)).join('·')).join(' | ')})`);
+      /* au milieu d'un glissement : l'entrant arrive par la droite, le sortant s'efface vers la gauche */
+      await goto(p, 0.18); await p.waitForTimeout(250);
+      const mid = await p.evaluate(() => { const body = document.querySelector('.scn-body').getBoundingClientRect(); return [...document.querySelectorAll('.scn-st')].slice(0, 2).map((s) => ({ x: s.getBoundingClientRect().left - body.left, o: +getComputedStyle(s).opacity })); });
+      ok(mid[0].x < 0 && mid[0].o < 1 && mid[1].x > 0 && mid[1].o === 1, `${tag} : glissement de droite à gauche, le sortant s'efface (${mid.map((m) => `${m.x.toFixed(0)}px/${m.o.toFixed(2)}`).join(' → ')})`);
+      ok(await p.evaluate(() => getComputedStyle(document.querySelector('.scn-steps')).display !== 'none' && document.querySelectorAll('.scn-steps li').length === 5), `${tag} : la liste des cinq étapes reste dans la page (lecteurs d'écran)`);
+      await ctx.close();
+    }
+  }
+  /* écran bas : la scène d'avant */
+  for (const [w, h] of [[1280, 560], [390, 560]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    await ctx.addInitScript(() => { try { localStorage.setItem('celya-consent', 'denied'); } catch (e) {} });
+    const p = await ctx.newPage();
+    await p.goto(base + 'lp/garages.html', { waitUntil: 'load' });
+    await p.evaluate(() => document.querySelector('[data-anim-root] .phone').scrollIntoView({ block: 'center' }));
+    await p.waitForTimeout(700);
+    const r = await p.evaluate(() => ({ on: !!document.querySelector('.scn-on'), pin: getComputedStyle(document.querySelector('.scn-pin')).position, n: document.querySelector('[data-anim-root]').getAnimations({ subtree: true }).filter((a) => a.effect.getTiming().duration === 15000).length }));
+    ok(!r.on && r.pin === 'static' && r.n > 10, `lp/garages.html @${w}×${h} : sous 600 px de haut, la scène d'avant (boucle de 15 s, ${r.n} animations, rien de fixé)`);
+    await ctx.close();
+  }
 }
 await browser.close();
 srv.close();

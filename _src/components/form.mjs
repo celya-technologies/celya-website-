@@ -7,7 +7,12 @@
  * phrase sous le bouton, et envoyer vaut accord (data-accord : celya.js envoie
  * consent_contact: true) ; le métier pré-rempli quand la page en a un (pages
  * d'atterrissage garages), toujours visible et modifiable ; un dernier champ
- * « Votre message », facultatif, envoyé comme need (rien quand il est vide). */
+ * « Votre message », facultatif, envoyé comme need (rien quand il est vide).
+ *
+ * Lot du 23/11/2026 (décision de Bora) : nom, téléphone et métier visibles ;
+ * l'e-mail, le moment de rappel et le message repliés sous « Ajouter un
+ * détail (facultatif) ». L'envoi ne change pas : mêmes champs, mêmes noms,
+ * même ordre, même web-lead, même honeypot. */
 import { esc } from '../lib/core.mjs';
 
 export const HIDDEN = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid', 'landing_page', 'page'];
@@ -23,12 +28,12 @@ export function demoForm(c, { id = 'demo', kind = 'demo', metier = '' } = {}) {
 <div class="f-field"><label for="${p}name">${f.name}</label><input id="${p}name" name="name" required autocomplete="name"></div>
 <div class="f-field"><label for="${p}phone">${f.phone}</label><input id="${p}phone" name="phone" type="tel" required autocomplete="tel" inputmode="tel" placeholder="${esc(f.phone_ph)}"></div>
 </div>
-<div class="f-row">
 <div class="f-field"><label for="${p}metier">${f.metier}</label><select id="${p}metier" name="metier"><option value="">${f.metier_ph}</option>${opts}</select></div>
+<details class="f-more"><summary>${f.more}</summary><div class="f-more-in">
 <div class="f-field"><label for="${p}email">${f.email} <small>(${f.optional})</small></label><input id="${p}email" name="email" type="email" autocomplete="email"></div>
-</div>
 <fieldset class="f-moment"><legend class="f-legend">${f.moment} <small>(${f.optional})</small></legend><div class="f-opts">${moments}</div></fieldset>
 <div class="f-field"><label for="${p}need">${f.message} <small>(${f.optional})</small></label><textarea class="f-short" id="${p}need" name="need" rows="2" maxlength="500"></textarea></div>
+</div></details>
 ${HIDDEN.map((h) => `<input type="hidden" name="${h}">`).join('')}
 <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
 <p class="f-err" role="alert"></p>

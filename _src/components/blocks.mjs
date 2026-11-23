@@ -241,15 +241,20 @@ export function priceNote(c) {
   return [r.ht, r.decompte, r.mise_en_service, r.au_dela, r.meta].map((x) => x[lang]).join(' · ') + '.';
 }
 
-export function priceCards(c) {
+export function priceCards(c, { swipe = false } = {}) {
   const { t, offre, lang } = c;
-  return `<div class="prices">${offre.formules.map((f) => `<article class="pc${f.recommandee ? ' pc-ink' : ''}">
+  /* swipe (pages d'atterrissage, 23/11/2026) : sous 720 px, un carrousel
+   * horizontal, une carte par écran, scroll-snap, la carte recommandée au
+   * centre au départ (celya.js), les cartes voisines qui dépassent et trois
+   * points dessous pour dire qu'on peut balayer ; au-dessus, rien ne change */
+  const dots = swipe ? `<p class="pc-dots" aria-hidden="true">${offre.formules.map((f) => `<i${f.recommandee ? ' class="on"' : ''}></i>`).join('')}</p>` : '';
+  return `<div class="prices${swipe ? ' prices-swipe' : ''}">${offre.formules.map((f) => `<article class="pc${f.recommandee ? ' pc-ink' : ''}">
 <p class="pc-top"><span class="label">${f.nom[lang]}</span>${f.recommandee ? `<span class="pc-reco">${t.price_reco}</span>` : ''}</p>
 <p class="pc-price"><b>${eur(f.prix_ht, lang)}</b><span>${t.price_per}</span></p>
 <p class="pc-min">${num(f.minutes, lang)} ${t.price_minutes}</p>
 <p class="pc-for">${f.pour[lang]}</p>
 <ul role="list">${f.inclus[lang].map((x) => `<li>${ico.check}<span>${x}</span></li>`).join('')}</ul>
-</article>`).join('')}</div>`;
+</article>`).join('')}</div>${dots}`;
 }
 
 /** Les boutons sous une grille de prix (19/11/2026) : « Commencer l'essai
@@ -265,13 +270,13 @@ export function priceGo(c, { demoHref = '', demoLabel = '' } = {}) {
 /** h2 : true = titre du composant (« Dès … HT par mois », price_h2) ; ou HTML d'un H2 existant */
 /** demoHref / demoLabel : cible et libellé du bouton « Demander une démo » (pages d'atterrissage :
  *  « #lp » et « Être rappelé pour une démo », le bouton du formulaire de la page : une action, un nom) */
-export function prices(c, { h2 = true, intro = '', id = '', demoHref = '', demoLabel = '' } = {}) {
+export function prices(c, { h2 = true, intro = '', id = '', demoHref = '', demoLabel = '', swipe = false } = {}) {
   const { t } = c;
   const title = h2 === true ? H(2, t.price_h2) : h2;
   return `<section class="sec bg-cream"${id ? ` id="${id}"` : ''}><div class="w">
 <div class="price-head">${title}${priceGo(c, { demoHref, demoLabel })}</div>
 ${intro ? `<div class="prose price-intro">${intro}</div>` : ''}
-${priceCards(c)}
+${priceCards(c, { swipe })}
 <p class="note">${priceNote(c)}</p>
 </div></section>`;
 }
@@ -379,17 +384,6 @@ ${body}
 </div></section>`;
 }
 
-/* ---------- « Appelez-la, comme un client » (pages d'atterrissage) ---------- */
-
-/** p : la phrase de la page ; second : cible du second bouton (le formulaire de la page) */
-export function tryCall(c, p, second) {
-  const { t, offre } = c;
-  return `<section class="sec-tight"><div class="w"><div class="try">
-<div><p class="label label-o">${t.try_label}</p>${H(2, t.try_h2)}<p>${p}</p></div>
-<div class="try-b"><a class="btn btn-orange" href="tel:${offre.telephone.e164}" data-call><span>${t.cta_call} · <span class="nw">${offre.telephone.affiche}</span></span></a><a class="btn btn-line" href="${second}">${t.form.submit}</a></div>
-</div></div></section>`;
-}
-
 /* ---------- la scène « Un appel, de bout en bout » (lot conversion du 16/11/2026) ----------
  * Un téléphone aux couleurs Celya (on ne reproduit l'interface ni de WhatsApp
  * ni de Google), mention « Exemple » visible. Cinq étapes sur une boucle de
@@ -403,15 +397,25 @@ export function tryCall(c, p, second) {
  * ex : jeu de textes (data/metiers.json <métier>.<langue>.scene, ou
  * data/i18n.json scene.generique) ; compact : téléphone seul (articles). */
 const STEP = 3; /* secondes par étape : 5 × 3 = 15 s */
-const at = (stage, local) => `style="--d:${(stage * STEP + local).toFixed(1)}s"`;
 
-export function scene(c, ex, { compact = false } = {}) {
+/* Lot du 23/11/2026 (décisions de Bora) : plus aucun numéro dans le parcours
+ * (« L'appel », pas « 1 · L'appel » ; la liste perd son compteur, un point
+ * orange le remplace) ; et, sur les quatre pages d'atterrissage (drive), la
+ * scène suit le doigt : le téléphone se fixe à l'écran (position: sticky)
+ * pendant environ 2,75 hauteurs d'écran, celya.js pose --t (l'instant, en
+ * secondes de la boucle de 15 s), --p (l'écran affiché, à virgule pendant le
+ * glissement) et --pr (l'avancée, de 0 à 1) ; le CSS n'en tire que transform
+ * et opacity. --r : le seuil d'apparition de chaque élément dans son étape
+ * (-1 : là dès l'arrivée de l'écran, jamais vide). Sous prefers-reduced-motion
+ * ou sous 600 px de haut, celya.js n'active rien : la boucle d'avant. */
+export function scene(c, ex, { compact = false, drive = false } = {}) {
   const { t } = c;
   const sc = t.scene;
   const [cli, jan, moi] = sc.qui;
-  const tag = (i) => `<span class="scn-tag">${i + 1} · ${sc.tags[i]}</span>`;
+  const at = (stage, local) => `style="--d:${(stage * STEP + local).toFixed(1)}s${drive ? `;--r:${local < 0.3 ? -1 : +((local - 0.2) / 1.5 * 0.6).toFixed(2)}` : ''}"`;
+  const tag = (i) => `<span class="scn-tag">${sc.tags[i]}</span>`;
   const say = (who, label, text, d) => `<span class="bub bub-${who} scn-in" ${d}><small>${label}</small>${text}</span>`;
-  const stage = (i, body) => `<div class="scn-st" ${at(i, 0)}>${tag(i)}${body}</div>`;
+  const stage = (i, body) => `<div class="scn-st" style="--d:${(i * STEP).toFixed(1)}s;--i:${i}">${tag(i)}${body}</div>`;
 
   const s1 = stage(0, say('me', cli, ex.appel[0], at(0, 0.2)) + say('her', jan, ex.appel[1], at(0, 0.8)) + say('me', cli, ex.appel[2], at(0, 1.4)));
   const s2 = stage(1, `<div class="scn-cal"><span class="scn-day">${sc.jour}</span>
@@ -433,11 +437,38 @@ export function scene(c, ex, { compact = false } = {}) {
   if (compact) {
     return `<figure class="scn scn-compact" data-anim-root><figcaption class="label">${sc.label}</figcaption>${phone}</figure>`;
   }
-  return `<section class="sec scn-sec"><div class="w scn" data-anim-root>
+  const list = `<ol class="scn-steps" role="list">${sc.etapes.map(([b, p], i) => `<li style="--d:${(i * STEP).toFixed(1)}s;--i:${i}"><i class="scn-hi" aria-hidden="true"></i>${drive && i < 4 ? '<i class="scn-rl" aria-hidden="true"></i>' : ''}<b>${b}</b><span>${p}</span></li>`).join('')}</ol>`;
+  if (!drive) {
+    return `<section class="sec scn-sec"><div class="w scn" data-anim-root>
 <div class="scn-t"><p class="label">${sc.label}</p>${H(3, sc.h3)}
-<ol class="scn-steps" role="list">${sc.etapes.map(([b, p], i) => `<li><i class="scn-hi" ${at(i, 0)} aria-hidden="true"></i><b>${b}</b><span>${p}</span></li>`).join('')}</ol></div>
+${list}</div>
 ${phone}
 </div></section>`;
+  }
+  /* pages d'atterrissage : le titre au-dessus, puis la piste ; la légende sous
+   * le téléphone (téléphone seulement, quand la scène suit le doigt) répète la
+   * liste pour l'œil : elle est aria-hidden, la liste reste lue */
+  const cap = `<div class="scn-cap" aria-hidden="true"><div class="scn-cap-in">${sc.etapes.map(([b, p], i) => `<p style="--i:${i}"><b>${b}</b><span>${p}</span></p>`).join('')}</div><span class="scn-bar"><i></i></span></div>`;
+  return `<section class="sec scn-sec scn-drive" data-scn-drive data-mbar-hide>
+<div class="w scn-head"><p class="label">${sc.label}</p>${H(3, sc.h3)}</div>
+<div class="scn-track"><div class="scn-pin"><div class="w scn" data-anim-root>
+<div class="scn-t">${list}</div>
+<div class="scn-ph-w">${phone}${cap}</div>
+</div></div></div>
+</section>`;
+}
+
+/* ---------- la pastille de l'appel (pages d'atterrissage, 23/11/2026) ----------
+ * Sous le H1, au-dessus du bouton d'appel, sur ordinateur comme sur téléphone.
+ * Quatre états sur une boucle de 10 s, CSS seul (transform / opacity), tous
+ * dans la même case de grille : la pastille prend la taille du plus long, rien
+ * ne bouge autour. En pause hors écran (.anim-off, celya.js) ; sous
+ * prefers-reduced-motion, « Rendez-vous pris », fixe. Textes : data/i18n.json,
+ * clé live ([titre, détail]). Le C animé de la marque à gauche. */
+export function livePill(c) {
+  const L = c.t.live;
+  return `<p class="lc"><span class="sr">${L.map(([a, b]) => `${a} · ${b}`).join('. ')}.</span><span class="lc-c">${cVoice()}</span><span class="lc-s" aria-hidden="true">${L.map(([a, b], i) =>
+    `<span class="lc-st" style="--d:${(i * 2.5).toFixed(1)}s"><b>${a}</b><i> · </i><span>${b}</span></span>`).join('')}</span></p>`;
 }
 
 /** Le jeu de textes d'une page : celui du métier s'il existe, sinon le générique */

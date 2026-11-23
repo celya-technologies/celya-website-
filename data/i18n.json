@@ -466,7 +466,8 @@
           "dentistes",
           "Dentistes"
         ]
-      ]
+      ],
+      "more": "Ajouter un détail (facultatif)"
     },
     "merci_href": "merci.html",
     "home": {
@@ -763,8 +764,6 @@
         "confirmation": "Bonjour Mme Lambert, votre rendez-vous est enregistré : jeudi 19 novembre à 10:00."
       }
     },
-    "try_label": "Le test le plus simple",
-    "try_h2": "Appelez-la, <em>comme un client.</em>",
     "mbar_callback": "Être rappelé",
     "cases_generique": {
       "rdv_t": "Un rendez-vous",
@@ -773,7 +772,25 @@
       "rappel_p": "Horaires, adresse, accès : elle répond avec vos informations.",
       "urgent_t": "Une urgence",
       "urgent_p": "Ce qui ne peut pas attendre : elle vous passe l'appel."
-    }
+    },
+    "live": [
+      [
+        "Appel entrant",
+        "08:11"
+      ],
+      [
+        "Janet répond",
+        "« Bonjour, je suis Janet. »"
+      ],
+      [
+        "Rendez-vous pris",
+        "jeudi 19 nov. · 10h"
+      ],
+      [
+        "Résumé envoyé",
+        "sur votre WhatsApp"
+      ]
+    ]
   },
   "nl": {
     "base": "nl/",
@@ -1241,7 +1258,8 @@
           "dentistes",
           "Tandartsen"
         ]
-      ]
+      ],
+      "more": "Meer vertellen"
     },
     "merci_href": "merci.html",
     "home": {
@@ -1515,8 +1533,6 @@
         "confirmation": "Goedendag mevr. Lambert, uw afspraak is genoteerd: donderdag 19 november om 10.00 u."
       }
     },
-    "try_label": "De eenvoudigste test",
-    "try_h2": "Bel haar, <em>zoals een klant.</em>",
     "mbar_callback": "Bel mij terug",
     "cases_generique": {
       "rdv_t": "Een afspraak",
@@ -1525,7 +1541,25 @@
       "rappel_p": "Openingsuren, adres, bereikbaarheid: ze antwoordt met uw informatie.",
       "urgent_t": "Iets dringends",
       "urgent_p": "Wat niet kan wachten: ze schakelt het gesprek naar u door."
-    }
+    },
+    "live": [
+      [
+        "Inkomende oproep",
+        "08:11"
+      ],
+      [
+        "Janet neemt op",
+        "« Goedendag, ik ben Janet. »"
+      ],
+      [
+        "Afspraak ingepland",
+        "donderdag 19 nov. · 10u"
+      ],
+      [
+        "Samenvatting verstuurd",
+        "op uw WhatsApp"
+      ]
+    ]
   },
   "en": {
     "base": "en/",
@@ -1902,7 +1936,8 @@
           "dentistes",
           "Dentists"
         ]
-      ]
+      ],
+      "more": "Add a detail"
     },
     "merci_href": "merci.html",
     "home": {
@@ -2176,8 +2211,6 @@
         "confirmation": "Hello Mrs Lambert, your appointment is booked: Thursday 19 November at 10:00."
       }
     },
-    "try_label": "The simplest test",
-    "try_h2": "Call her, <em>like a customer would.</em>",
     "mbar_callback": "Call me back",
     "cases_generique": {
       "rdv_t": "A booking",
@@ -2186,6 +2219,24 @@
       "rappel_p": "Opening hours, address, directions: she answers with your information.",
       "urgent_t": "An emergency",
       "urgent_p": "What can't wait: she puts the call through to you."
-    }
+    },
+    "live": [
+      [
+        "Incoming call",
+        "08:11"
+      ],
+      [
+        "Janet answers",
+        "\"Hello, I'm Janet.\""
+      ],
+      [
+        "Appointment booked",
+        "Thursday 19 Nov · 10am"
+      ],
+      [
+        "Summary sent",
+        "to your WhatsApp"
+      ]
+    ]
   }
 }

@@ -27,6 +27,11 @@
  *      ailleurs, les trois métiers ajoutés avant « Autre », le message
  *      facultatif en dernier champ (2 lignes, 500 caractères, jamais requis) ;
  *      à l'envoi : consent_contact: true, need seulement s'il est écrit ;
+ *
+ * Lot du 23/11/2026 (« site mobile ») :
+ *  10. nom, téléphone et métier visibles ; e-mail, moment et message repliés
+ *      sous « Ajouter un détail (facultatif) », fermé au départ ; le visiteur
+ *      l'ouvre (le test aussi) ; l'envoi ne change pas ;
  *   9. merci.html : « sous 24 heures » et le bouton « Appeler Janet » avec le
  *      numéro, dans les trois langues ;
  *
@@ -78,6 +83,11 @@ async function context(browser, { consent, width = 1280, height = 900 } = {}) {
   return { ctx, external, leads };
 }
 
+/* « Ajouter un détail (facultatif) » : ouvert comme le ferait le visiteur (23/11/2026) */
+async function more(p) {
+  if (await p.locator('form[data-lead] details.f-more:not([open]) > summary').count()) await p.click('form[data-lead] details.f-more > summary');
+}
+
 async function main() {
   const pages = process.argv.slice(2).length ? process.argv.slice(2) : ['demo.html'];
   const srv = await serve();
@@ -111,6 +121,7 @@ async function main() {
       await p.fill('form[data-lead] [name=name]', 'Test Garage');
       await p.fill('form[data-lead] [name=phone]', '+32 470 00 00 00');
       await p.selectOption('form[data-lead] [name=metier]', 'garages');
+      await more(p);
       await p.check('form[data-lead] input[name=moment][value=matin]');
       ok(await p.locator('form[data-lead] input[type=checkbox]').count() === 0, 'aucune case à cocher dans le formulaire');
       await Promise.all([p.waitForURL(/merci\.html$/, { timeout: 8000 }).catch(() => {}), p.click('form[data-lead] button[type=submit]')]);
@@ -135,6 +146,7 @@ async function main() {
       await p.fill('form[data-lead] [name=name]', 'Test');
       await p.fill('form[data-lead] [name=phone]', '+32470000000');
       await p.selectOption('form[data-lead] [name=metier]', 'restaurants');
+      await more(p);
       await p.fill('form[data-lead] [name=need]', 'Je voudrais être rappelé après 16h.');
       /* on capte le dataLayer juste avant la redirection */
       await p.exposeFunction('__dl', () => {});
@@ -216,7 +228,8 @@ async function main() {
         ok(!r.overBanner && !r.overHero, `${rel} ${w}×${h}${consent ? '' : ' (bandeau cookies)'} : la barre ne recouvre ni le bandeau ni les boutons du héros`);
         if (!consent) ok(!r.bar, `${rel} ${w}×${h} : barre masquée tant que le bandeau cookies est affiché`);
         if (consent) {
-          await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+          /* pages d'atterrissage (23/11/2026) : au milieu, la scène ou le formulaire, où la barre se cache (tests/lp.mjs) ; on la cherche à la FAQ */
+          await p.evaluate(() => { const f = document.querySelector('.p-lp #faq'); window.scrollTo(0, f ? f.getBoundingClientRect().top + scrollY : document.documentElement.scrollHeight / 2); });
           await p.waitForTimeout(450);
           const shown = await p.evaluate(() => { const b = document.querySelector('.mbar').getBoundingClientRect(); return b.top < innerHeight && getComputedStyle(document.querySelector('.mbar')).visibility !== 'hidden'; });
           ok(shown, `${rel} ${w}×${h} : barre visible après défilement`);
@@ -256,6 +269,16 @@ async function main() {
     const { ctx } = await context(browser, { consent: 'denied' });
     const p = await ctx.newPage();
     await p.goto(base + rel, { waitUntil: 'load' });
+    const fold = await p.evaluate(() => {
+      const f = document.querySelector('form[data-lead]'), d = f.querySelector('details.f-more');
+      const vis = (n) => { const el = f.querySelector(`[name=${n}]`); return !!el && el.checkVisibility({ visibilityProperty: true }); };
+      return { d: !!d, open: d && d.open, sum: d ? d.querySelector('summary').textContent.trim() : '', shown: ['name', 'phone', 'metier', 'email', 'moment', 'need'].filter(vis).join(), inside: d ? ['email', 'moment', 'need'].every((n) => d.contains(f.querySelector(`[name=${n}]`))) : false,
+        order: [...f.querySelectorAll('input:not([type=hidden]),select,textarea')].map((x) => x.name).filter((n, i, a) => a.indexOf(n) === i).join() };
+    });
+    ok(fold.d && !fold.open && fold.sum === F.more && fold.shown === 'name,phone,metier' && fold.inside, `${rel} : nom, téléphone, métier visibles ; e-mail, moment et message repliés sous « ${F.more} » (${fold.shown})`);
+    ok(fold.order === 'name,phone,metier,email,moment,need,website', `${rel} : mêmes champs, même ordre (${fold.order})`);
+    await more(p);
+    ok(await p.evaluate(() => ['email', 'moment', 'need'].every((n) => document.querySelector(`form[data-lead] [name=${n}]`).checkVisibility())), `${rel} : « ${F.more} » ouvre l'e-mail, le moment et le message`);
     const r = await p.evaluate(() => {
       const f = document.querySelector('form[data-lead]');
       const btn = f.querySelector('button[type=submit]');
