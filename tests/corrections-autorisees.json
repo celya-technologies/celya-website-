@@ -711,10 +711,29 @@
         "Les rendez-vous d'atelier pris pendant l'appel",
         "Entretien, pneus, freins : sur vos créneaux réels, dans votre Google Agenda ou l'agenda Celya.",
         "Une fiche claire sur WhatsApp",
-        "Client, véhicule, motif : le résumé de chaque appel arrive sur votre WhatsApp."
+        "Client, véhicule, motif : le résumé de chaque appel arrive sur votre WhatsApp.",
+        "Pendant que vous êtes sous la voiture, elle répond en français et en néerlandais, pose le rendez-vous d'atelier et vous envoie chaque appel sur WhatsApp.",
+        "Comment ça marche",
+        "Un client appelle le garage",
+        "Vous avez les mains dans un moteur, ou l'atelier est fermé.",
+        "Janet décroche",
+        "En quelques secondes, elle accueille le client et comprend sa demande.",
+        "Elle agit",
+        "Selon la demande :",
+        "Vous recevez tout",
+        "Le résumé de l'appel arrive sur votre WhatsApp. Une panne ? L'appel vous est passé.",
+        "Rendez-vous Message Urgence",
+        "Le test le plus simple",
+        "Appelez-la, comme un client.",
+        "Demandez un rendez-vous pour un entretien, ou dites que votre voiture ne démarre plus. Vous entendrez ce que vos clients entendront."
       ],
       "_texte": "lot conversion Google Ads du 16/11/2026 (brief, section 2) : les trois bénéfices (ul.benefits) sont remplacés par « Chaque appel, rangé dans la bonne case » et « Appelez-la, comme un client » ; le héros reçoit la phrase du brief (section 1)",
-      "_h1": "brief du 16/11/2026, section 1 : <em> du H1 raccourci (« Janet décroche à votre place. » / « Janet neemt op in uw plaats. »)"
+      "_h1": "brief du 16/11/2026, section 1 : <em> du H1 raccourci (« Janet décroche à votre place. » / « Janet neemt op in uw plaats. »)",
+      "h2_retires": [
+        "Comment ça marche",
+        "Appelez-la, comme un client."
+      ],
+      "_texte_23_11": "lot « site mobile » du 23/11/2026 (décision de Bora) : la phrase sous le H1 est remplacée par la pastille de l'appel ; « Comment ça marche » (il redit la scène) et « Appelez-la, comme un client » (l'appel final dit déjà la même chose) quittent les pages d'atterrissage"
     },
     "lp/ne-plus-rater-d-appels.html": {
       "texte": [
@@ -723,9 +742,28 @@
         "Les rendez-vous pris pendant l'appel",
         "Dans votre Google Agenda ou dans l'agenda Celya, sur vos créneaux réellement libres.",
         "Le résumé sur WhatsApp",
-        "Qui a appelé, pour quoi, ce qui est urgent : tout arrive sur votre WhatsApp, et l'urgent vous est transféré."
+        "Qui a appelé, pour quoi, ce qui est urgent : tout arrive sur votre WhatsApp, et l'urgent vous est transféré.",
+        "Pendant que vous travaillez, elle répond en français et en néerlandais, prend vos rendez-vous et vous envoie chaque appel sur WhatsApp.",
+        "Comment ça marche",
+        "Un client appelle",
+        "Vous êtes occupé, fermé, ou déjà en ligne.",
+        "Janet décroche",
+        "En quelques secondes, elle accueille l'appelant et comprend sa demande.",
+        "Elle agit",
+        "Selon la demande :",
+        "Vous recevez tout",
+        "Le résumé de l'appel arrive sur votre WhatsApp. Urgent ? L'appel vous est passé.",
+        "Rendez-vous Message Urgence",
+        "Le test le plus simple",
+        "Appelez-la, comme un client.",
+        "Demandez un rendez-vous, ou posez une question sur vos horaires. Vous entendrez ce que vos clients entendront."
       ],
-      "_texte": "lot conversion Google Ads du 16/11/2026 (brief, section 2) : les trois bénéfices (ul.benefits) sont remplacés par « Chaque appel, rangé dans la bonne case » et « Appelez-la, comme un client » ; le héros reçoit la phrase du brief (section 1)"
+      "_texte": "lot conversion Google Ads du 16/11/2026 (brief, section 2) : les trois bénéfices (ul.benefits) sont remplacés par « Chaque appel, rangé dans la bonne case » et « Appelez-la, comme un client » ; le héros reçoit la phrase du brief (section 1)",
+      "h2_retires": [
+        "Comment ça marche",
+        "Appelez-la, comme un client."
+      ],
+      "_texte_23_11": "lot « site mobile » du 23/11/2026 (décision de Bora) : la phrase sous le H1 est remplacée par la pastille de l'appel ; « Comment ça marche » (il redit la scène) et « Appelez-la, comme un client » (l'appel final dit déjà la même chose) quittent les pages d'atterrissage"
     },
     "nl/lp/garages.html": {
       "texte": [
@@ -734,10 +772,29 @@
         "Werkplaatsafspraken tijdens de oproep",
         "Onderhoud, banden, remmen: op uw echte vrije momenten, in uw Google Agenda of de agenda van Celya.",
         "Een duidelijke fiche op WhatsApp",
-        "Klant, wagen, reden: de samenvatting van elke oproep komt op uw WhatsApp."
+        "Klant, wagen, reden: de samenvatting van elke oproep komt op uw WhatsApp.",
+        "Terwijl u onder de wagen ligt, antwoordt ze in het Frans en het Nederlands, legt ze de afspraak in de werkplaats vast en stuurt ze u elk gesprek op WhatsApp.",
+        "Hoe het werkt",
+        "Een klant belt de garage",
+        "U zit met uw handen in een motor, of de werkplaats is gesloten.",
+        "Janet neemt op",
+        "Binnen enkele seconden verwelkomt ze de klant en begrijpt ze zijn vraag.",
+        "Ze handelt",
+        "Naargelang de vraag:",
+        "U krijgt alles",
+        "De samenvatting van het gesprek komt op uw WhatsApp. Pech? Het gesprek wordt naar u doorgeschakeld.",
+        "Afspraak Bericht Dringend",
+        "De eenvoudigste test",
+        "Bel haar, zoals een klant.",
+        "Vraag een afspraak voor een onderhoud, of zeg dat uw wagen niet meer start. U hoort wat uw klanten zullen horen."
       ],
       "_texte": "lot conversion Google Ads du 16/11/2026 (brief, section 2) : les trois bénéfices (ul.benefits) sont remplacés par « Chaque appel, rangé dans la bonne case » et « Appelez-la, comme un client » ; le héros reçoit la phrase du brief (section 1)",
-      "_h1": "brief du 16/11/2026, section 1 : <em> du H1 raccourci (« Janet décroche à votre place. » / « Janet neemt op in uw plaats. »)"
+      "_h1": "brief du 16/11/2026, section 1 : <em> du H1 raccourci (« Janet décroche à votre place. » / « Janet neemt op in uw plaats. »)",
+      "h2_retires": [
+        "Hoe het werkt",
+        "Bel haar, zoals een klant."
+      ],
+      "_texte_23_11": "lot « site mobile » du 23/11/2026 (décision de Bora) : la phrase sous le H1 est remplacée par la pastille de l'appel ; « Comment ça marche » (il redit la scène) et « Appelez-la, comme un client » (l'appel final dit déjà la même chose) quittent les pages d'atterrissage"
     },
     "nl/lp/geen-oproepen-meer-missen.html": {
       "texte": [
@@ -746,9 +803,28 @@
         "Afspraken vastgelegd tijdens de oproep",
         "In uw Google Agenda of in de agenda van Celya, op uw echt vrije momenten.",
         "De samenvatting op WhatsApp",
-        "Wie belde, waarvoor, wat dringend is: alles komt op uw WhatsApp, en het dringende wordt naar u doorgeschakeld."
+        "Wie belde, waarvoor, wat dringend is: alles komt op uw WhatsApp, en het dringende wordt naar u doorgeschakeld.",
+        "Terwijl u werkt, antwoordt ze in het Frans en het Nederlands, legt ze uw afspraken vast en stuurt ze u elk gesprek op WhatsApp.",
+        "Hoe het werkt",
+        "Een klant belt",
+        "U bent bezet, gesloten, of al in gesprek.",
+        "Janet neemt op",
+        "Binnen enkele seconden verwelkomt ze de beller en begrijpt ze zijn vraag.",
+        "Ze handelt",
+        "Naargelang de vraag:",
+        "U krijgt alles",
+        "De samenvatting van het gesprek komt op uw WhatsApp. Dringend? Het gesprek wordt naar u doorgeschakeld.",
+        "Afspraak Bericht Dringend",
+        "De eenvoudigste test",
+        "Bel haar, zoals een klant.",
+        "Vraag een afspraak, of stel een vraag over uw openingsuren. U hoort wat uw klanten zullen horen."
       ],
-      "_texte": "lot conversion Google Ads du 16/11/2026 (brief, section 2) : les trois bénéfices (ul.benefits) sont remplacés par « Chaque appel, rangé dans la bonne case » et « Appelez-la, comme un client » ; le héros reçoit la phrase du brief (section 1)"
+      "_texte": "lot conversion Google Ads du 16/11/2026 (brief, section 2) : les trois bénéfices (ul.benefits) sont remplacés par « Chaque appel, rangé dans la bonne case » et « Appelez-la, comme un client » ; le héros reçoit la phrase du brief (section 1)",
+      "h2_retires": [
+        "Hoe het werkt",
+        "Bel haar, zoals een klant."
+      ],
+      "_texte_23_11": "lot « site mobile » du 23/11/2026 (décision de Bora) : la phrase sous le H1 est remplacée par la pastille de l'appel ; « Comment ça marche » (il redit la scène) et « Appelez-la, comme un client » (l'appel final dit déjà la même chose) quittent les pages d'atterrissage"
     },
     "cookies.html": {
       "texte": [

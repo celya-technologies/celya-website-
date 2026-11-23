@@ -44,11 +44,24 @@
   /* ---- année du pied de page ---- */
   document.querySelectorAll('.yr').forEach(function(e){e.textContent=new Date().getFullYear();});
 
-  /* ---- menu mobile : les liens sont écrits dans le HTML (SEO) ; ici, l'ouverture seule ---- */
+  /* ---- menu mobile : les liens sont écrits dans le HTML (SEO) ; ici, l'ouverture seule ----
+     Lot du 23/11/2026 : le bouton devient une croix (CSS, aria-expanded) et
+     son aria-label passe de « Menu » à « Fermer » ; un appui sur le voile ou
+     sur un lien ferme le menu, comme Échap ; la page derrière ne défile pas et
+     la barre d'appel du bas se cache (celya.css, body.mnav-open). */
   (function(){
     var btn=document.querySelector('.burger');if(!btn)return;
-    function set(open){document.body.classList.toggle('mnav-open',open);btn.setAttribute('aria-expanded',open?'true':'false');}
-    btn.addEventListener('click',function(){set(btn.getAttribute('aria-expanded')!=='true');});
+    var nav=document.getElementById('mnav'),veil=document.querySelector('.mnav-veil'),lab=btn.querySelector('.burger-l');
+    function set(open){
+      document.body.classList.toggle('mnav-open',open);document.documentElement.classList.toggle('mnav-open',open);btn.setAttribute('aria-expanded',open?'true':'false');
+      var l=btn.getAttribute(open?'data-close':'data-open');if(l){btn.setAttribute('aria-label',l);if(lab)lab.textContent=l;}
+    }
+    /* un seul écouteur, délégué : le bouton ouvre ou ferme ; le voile ou un lien du panneau ferment */
+    document.addEventListener('click',function(e){
+      var x=e.target;if(!x.closest)return;
+      if(x.closest('.burger')===btn)set(btn.getAttribute('aria-expanded')!=='true');
+      else if(document.body.classList.contains('mnav-open')&&(x===veil||(nav&&nav.contains(x)&&x.closest('a'))))set(false);
+    });
     document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.body.classList.contains('mnav-open')){set(false);btn.focus();}});
     onResize(function(){if(innerWidth>1180)set(false);}); /* même seuil que celya.css */
   })();
@@ -167,7 +180,70 @@
       /* au-dessus ou dans l'écran : barre cachée ; défilé au-delà : barre affichée */
       root.classList.toggle('mbar-on',!e.isIntersecting&&e.boundingClientRect.top<0);
     }).observe(hero);
+    /* 23/11/2026 : elle se cache aussi tant qu'un [data-mbar-hide] est à l'écran
+       (pages d'atterrissage : le formulaire, que son second bouton ouvre, et la
+       scène qui suit le doigt) */
+    var hide=document.querySelectorAll('[data-mbar-hide]');if(!hide.length)return;
+    var seen=[];
+    var hio=new IntersectionObserver(function(es){
+      es.forEach(function(e){var i=seen.indexOf(e.target);if(e.isIntersecting){if(i<0)seen.push(e.target);}else if(i>=0)seen.splice(i,1);});
+      root.classList.toggle('mbar-hide',seen.length>0);
+    });
+    hide.forEach(function(h){hio.observe(h);});
   })();
+
+  /* ---- la scène qui suit le doigt (pages d'atterrissage, 23/11/2026) ----
+     Le téléphone se fixe à l'écran (sticky, celya.css) pendant environ 2,75
+     hauteurs d'écran. À chaque défilement, trois variables sur la section :
+     --t (l'instant, en secondes de la boucle de 15 s), --p (l'écran affiché, à
+     virgule pendant le glissement, sur le dernier quart de chaque étape) et
+     --pr (l'avancée, de 0 à 1). Le CSS n'en tire que transform et opacity.
+     Si on remonte, tout se rejoue à l'envers ; si on s'arrête, tout s'arrête.
+     Mesures dans drect() (cache vidé au resize), jamais dans le défilement.
+     Rien sous prefers-reduced-motion ni sous 600 px de haut : la scène d'avant. */
+  (function(){
+    var sec=document.querySelector('[data-scn-drive]');if(!sec||REDUCE)return;
+    var track=sec.querySelector('.scn-track'),pin=sec.querySelector('.scn-pin');if(!track||!pin)return;
+    var on=false,start=0,run=1;
+    function measure(){
+      var want=innerHeight>=600;
+      if(want!==on){on=want;sec.classList.toggle('scn-on',on);DR.delete(track);DR.delete(pin);}
+      if(!on){['--t','--p','--pr'].forEach(function(k){sec.style.removeProperty(k);});return;}
+      var tr=drect(track),ph=drect(pin);
+      var top=innerWidth<=720?76:88; /* --pin-top de celya.css */
+      start=tr.top-top;run=Math.max(1,tr.height-ph.height);
+      update();
+    }
+    function update(){
+      if(!on)return;
+      var pr=Math.min(1,Math.max(0,(scrollY-start)/run));
+      var s=pr*5,st=Math.min(4,Math.floor(s)),u=s-st;
+      var p=st+(st<4?Math.max(0,(u-0.75)/0.25):0);
+      sec.style.setProperty('--t',(s*3).toFixed(3));
+      sec.style.setProperty('--p',p.toFixed(4));
+      sec.style.setProperty('--pr',pr.toFixed(4));
+    }
+    onResize(measure);onScroll(update);measure();
+  })();
+
+  /* ---- prix en carrousel sous 720 px (pages d'atterrissage, 23/11/2026) ----
+     La carte recommandée au centre au départ (une fois, et quand on repasse
+     sous 720 px) ; les points suivent la carte visible (IntersectionObserver,
+     aucun écouteur de défilement de plus). */
+  document.querySelectorAll('.prices-swipe').forEach(function(sw){
+    var cards=[].slice.call(sw.querySelectorAll('.pc')),dots=sw.nextElementSibling&&sw.nextElementSibling.classList.contains('pc-dots')?[].slice.call(sw.nextElementSibling.children):[];
+    var reco=sw.querySelector('.pc-ink')||cards[0],narrow=null;
+    function center(){
+      var n=innerWidth<=720;if(n===narrow)return;narrow=n;
+      if(n&&reco)sw.scrollLeft=reco.offsetLeft-(sw.clientWidth-reco.offsetWidth)/2;
+    }
+    center();onResize(center);
+    if(!HAS_IO||!dots.length)return;
+    var dio=new IntersectionObserver(function(es){
+      es.forEach(function(e){if(e.isIntersecting){var i=cards.indexOf(e.target);dots.forEach(function(d,k){d.classList.toggle('on',k===i);});}});
+    },{root:sw,threshold:0.6});
+    cards.forEach(function(cd){dio.observe(cd);});
+  });
 
   /* ---- mesure : seulement avec l'accord du visiteur, et seulement via GTM ---- */
   function consented(){try{return localStorage.getItem(CONSENT_KEY)==='granted';}catch(e){return false;}}
@@ -259,7 +335,7 @@
       if(f.getAttribute('data-need')==='phone-or-email'&&!val('phone')&&!val('email'))bad.push(E.phone,E.email);
       if(E.email&&val('email')&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val('email')))bad.push(E.email);
       [].forEach.call(f.querySelectorAll('[aria-invalid]'),function(x){x.removeAttribute('aria-invalid');});
-      if(bad.length){bad.forEach(function(x){if(x)x.setAttribute('aria-invalid','true');});fail(f.getAttribute('data-err-required'));if(bad[0])bad[0].focus();return;}
+      if(bad.length){bad.forEach(function(x){if(x){x.setAttribute('aria-invalid','true');var d=x.closest&&x.closest('details');if(d)d.open=true;}}); /* un champ replié (« Ajouter un détail ») s'ouvre */fail(f.getAttribute('data-err-required'));if(bad[0])bad[0].focus();return;}
       var body={
         name:val('name'),company:val('company'),phone:val('phone'),email:val('email'),
         need:val('need')||undefined,website:E.website?E.website.value:'', /* message facultatif : rien quand il est vide */

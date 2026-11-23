@@ -17,6 +17,12 @@
  *  que rien ne doit recouvrir ; rien ne dépasse (scrollWidth == innerWidth) ;
  *  aucun effet au défilement (l'exception du 15/11 reste aux accueils).
  *
+ *  Lot du 23/11/2026 : sur les pages d'atterrissage, la pastille de l'appel
+ *  remplace la phrase (dans le premier écran, contraste mesuré sur son propre
+ *  fond, plein) ; le formulaire est dans la section .lpf, posée dans la
+ *  colonne droite du héros au-dessus de 860 px : ses libellés se mesurent
+ *  toujours sur la vidéo à 1440 px.
+ *
  *   node tests/heros.mjs [pages…]   (défaut : les trois accueils et les quatre pages d'atterrissage) */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -110,16 +116,16 @@ for (const rel of pages) {
         const hits = (a, b) => a && b && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
         const btns = [...document.querySelectorAll('.hv .cta-btns .btn')].filter(shown).map(box);
         /* tous les boutons du héros dans l'écran (formulaire compris) : rien ne les recouvre */
-        const all = [...document.querySelectorAll('.hv .btn')].filter(shown).map(box).filter((b) => b.top < vh && b.bottom > 0);
+        const all = [...document.querySelectorAll('.hv .btn, .lpf .btn')].filter(shown).map(box).filter((b) => b.top < vh && b.bottom > 0);
         const covers = [q('.cbanner'), q('.hdr-in'), q('.hv-tag'), q('.mbar')].filter((x) => x && getComputedStyle(x).visibility !== 'hidden').map(box);
         const want = LP && vw > 860 ? 1 : 2;
         return {
-          h1: inside(box(q('.hv h1'))), lead: inside(box(q('.hv .lead'))), btns: btns.length === want && btns.every(inside), n: btns.length, want,
+          h1: inside(box(q('.hv h1'))), lead: inside(box(q(LP ? '.hv .lc' : '.hv .lead'))), btns: btns.length === want && btns.every(inside), n: btns.length, want,
           covered: all.some((b) => covers.some((c) => hits(b, c))),
           sw: document.documentElement.scrollWidth, vw,
         };
       }, LP);
-      ok(r.h1 && r.lead && r.btns, `${w}×${h}${banner ? ' bandeau cookies' : ''} : H1, phrase et ${r.want} bouton(s) dans le premier écran (${r.n})`);
+      ok(r.h1 && r.lead && r.btns, `${w}×${h}${banner ? ' bandeau cookies' : ''} : H1, ${LP ? 'pastille de l\'appel' : 'phrase'} et ${r.want} bouton(s) dans le premier écran (${r.n})`);
       ok(!r.covered, `${w}×${h}${banner ? ' bandeau cookies' : ''} : aucun bouton du héros recouvert`);
       if (LP) ok(r.sw === r.vw, `${w}×${h}${banner ? ' bandeau cookies' : ''} : rien ne dépasse (scrollWidth ${r.sw} = ${r.vw})`);
       await ctx.close();
@@ -133,7 +139,7 @@ for (const rel of pages) {
       const box = (el, sel) => { const b = el.getBoundingClientRect(); return { sel, color: getComputedStyle(el).color, x: Math.max(0, b.left), y: Math.max(0, b.top + scrollY), w: b.width, h: b.height }; };
       const shown = (el) => el.getClientRects().length > 0 && getComputedStyle(el).display !== 'none';
       const sels = ['.hv h1', '.hv h1 em', '.hv .lead', '.hv .cta-btns .btn-line'];
-      if (LP) sels.push('.lpv .form-t', '.lpv .form-sub', '.lpv .f-field label', '.lpv .f-legend', '.lpv .f-accord', '.lpv .f-small');
+      if (LP && innerWidth > 860) sels.push('.lpf .form-t', '.lpf .form-sub', '.lpf .f-field label', '.lpf .f-more summary', '.lpf .f-accord', '.lpf .f-small');
       const out = [];
       for (const sel of sels) for (const el of document.querySelectorAll(sel)) if (shown(el)) out.push(box(el, sel));
       const hv = document.querySelector('.hv').getBoundingClientRect();
@@ -141,7 +147,14 @@ for (const rel of pages) {
     }, LP);
     /* texte masqué, nav et étiquette aussi : on ne mesure que la vidéo voilée
      * (et, sur les pages d'atterrissage, le fond translucide du formulaire) */
-    await p.addStyleTag({ content: '.hv-txt,.lpv-t,.hdr,.hv-tag{visibility:hidden!important}.hv .btn-line{visibility:hidden!important}.lpv .form *{visibility:hidden!important}' });
+    /* la pastille de l'appel (fond plein) : son texte se mesure sur son propre fond */
+    if (LP) {
+      const pill = await p.evaluate(() => { const bg = getComputedStyle(document.querySelector('.lc')).backgroundColor; return { bg, fg: [...document.querySelectorAll('.lc-st b, .lc-st span, .lc-st i')].map((e) => getComputedStyle(e).color) }; });
+      const rgb = (c) => c.match(/\d+/g).map(Number), Lb = lum(...rgb(pill.bg));
+      const worstPill = Math.min(...pill.fg.map((c) => ratio(lum(...rgb(c)), Lb)));
+      ok(rgb(pill.bg).length === 3 && worstPill >= 4.5, `${w}×${h} : contraste de la pastille sur son fond plein ≥ 4,5 (${worstPill.toFixed(2)})`);
+    }
+    await p.addStyleTag({ content: '.hv-txt,.lpv-t,.hdr,.hv-tag{visibility:hidden!important}.hv .btn-line{visibility:hidden!important}.lpf .form *{visibility:hidden!important}' });
     const worst = Object.fromEntries(targets.map((t) => [t.sel, Infinity]));
     const dur = await p.evaluate(() => document.querySelector('.hv video').duration || 9);
     for (let i = 0; i < 10; i++) {

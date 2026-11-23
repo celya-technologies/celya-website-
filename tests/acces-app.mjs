@@ -10,8 +10,12 @@
  *            puis « Demander une démo » (bouton orange), rien d'autre : ni
  *            « Essai gratuit », ni « Appeler Janet » ; la langue est un
  *            sélecteur « FR ▾ » (révision du 19/11/2026, décision de Bora) ;
- *   menu     menu mobile : « Essai gratuit · N jours », « Demander une démo »,
- *            « Se connecter », juste avant le choix de langue ;
+ *   menu     menu mobile (refait le 23/11/2026, décision de Bora) : les
+ *            entrées de l'en-tête de l'ordinateur, dans le même ordre ;
+ *            « Votre métier » en <details> avec tous les métiers et « Tous les
+ *            métiers » écrits dans le HTML ; en bas, « Essai gratuit · N
+ *            jours » seul bouton, puis « Se connecter » et les langues sur une
+ *            ligne ; plus de « Demander une démo » dans le panneau ;
  *   footer   pied de page : « Se connecter » dans la colonne Entreprise, après
  *            Contact ;
  *   pricing  sous chaque grille de prix (hors pages d'atterrissage) :
@@ -22,6 +26,13 @@
  *   layout   l'en-tête tient dans son cadre (360 à 1440 px, FR/NL/EN) ; sous
  *            720 px seul « Demander une démo » reste à côté du menu ; le menu
  *            ouvert garde le bloc dans son cadre ;
+ *   mnav     le menu ouvert (360, 390, 768 px ; FR, NL, EN) : la croix et
+ *            « Fermer » ; la page figée et la barre d'appel cachée ; le
+ *            panneau sous l'en-tête, au-dessus du bandeau cookies, sans flou ;
+ *            à 360 × 640 bandeau affiché, l'essai, la connexion et les langues
+ *            visibles sans défiler ; zones d'appui de 44 px au moins ;
+ *            « Votre métier » s'ouvre sur place ; fermeture au voile, sur un
+ *            lien, à Échap ;
  *   events   avec accord cookies : sign_up_start / login_click {place, page,
  *            lang} au clic (en-tête, menu, prix, pied de page) ; rien sans
  *            accord.
@@ -41,6 +52,8 @@ const require = createRequire(import.meta.url);
 let chromium;
 try { ({ chromium } = require('playwright')); } catch { ({ chromium } = require('/opt/node22/lib/node_modules/playwright')); }
 
+/* hôte exact, jamais un préfixe d'URL (CodeQL : « Incomplete URL substring sanitization ») */
+const isLocal = (u) => { try { const h = new URL(u).hostname; return h === '127.0.0.1' || h === 'localhost'; } catch { return false; } };
 const LOGIN = 'https://app.celya.be/login';
 const SIGNUP = 'https://app.celya.be/inscription';
 const href = (u, lang) => (lang === 'fr' ? u : `${u}?lang=${lang}`);
@@ -92,11 +105,19 @@ function statics(root) {
     const langDrop = /<div class="drop hdr-lang"><span class="drop-t" tabindex="0" aria-label="[^"]+">([A-Z]{2})<svg[\s\S]*?<div class="drop-p lang-p">((?:<a href="[^"]+" hreflang="[a-z]{2}" lang="[a-z]{2}">[A-Z]{2}<\/a>)+)<\/div><\/div>/.exec(hdr);
     if (/<nav class="mnav"[\s\S]*?<div class="mnav-lang">[\s\S]*?hreflang=/.test(html) && (!langDrop || langDrop[1] !== lang.toUpperCase() || langDrop[2].includes(`>${lang.toUpperCase()}<`))) F.header.push(`${rel} : sélecteur de langue « ${lang.toUpperCase()} ▾ » absent ou faux`);
     if (/<header class="hdr">[\s\S]*?data-call[\s\S]*?<\/header>/.test(html)) F.header.push(`${rel} : « ${t.cta_call} » encore dans l'en-tête`);
-    /* menu mobile */
+    /* menu mobile (23/11/2026) */
+    const mnav = (/<nav class="mnav" id="mnav"[\s\S]*?<\/nav>/.exec(html) || [''])[0];
     const menu = new RegExp(`<div class="mnav-app"><a class="btn btn-orange" href="${reEsc(S)}" data-app="signup" data-place="menu">${reEsc(t.trial_menu.replace('{{offre.essai}}', days))}</a>` +
-      `<a class="btn btn-line" href="[^"]+" data-demo>${reEsc(t.cta_demo)}</a>` +
-      `<a class="mnav-login" href="${reEsc(L)}" data-app="login" data-place="menu">${reEsc(t.login)}</a></div><div class="mnav-lang">`);
-    if (!/<nav class="mnav"[\s\S]*<\/nav>/.test(html) || !menu.test((/<nav class="mnav"[\s\S]*?<\/nav>/.exec(html) || [''])[0])) F.menu.push(`${rel} : bloc d'accès du menu absent ou dans le désordre`);
+      `<div class="mnav-foot"><a class="mnav-login" href="${reEsc(L)}" data-app="login" data-place="menu">${reEsc(t.login)}</a><div class="mnav-lang">`);
+    if (!menu.test(mnav)) F.menu.push(`${rel} : bas du panneau absent ou dans le désordre (essai, puis Se connecter et les langues)`);
+    if (/data-demo/.test(mnav)) F.menu.push(`${rel} : « ${t.cta_demo} » répété dans le panneau`);
+    const list = (/<div class="mnav-list">([\s\S]*?)<\/div><div class="mnav-app">/.exec(mnav) || [])[1] || '';
+    const entries = [...list.replace(/(<details class="mnav-met"><summary>[^<]*)[\s\S]*?<\/details>/g, '$1').matchAll(/<(?:a href="[^"]*"|details class="mnav-met"><summary)>([^<]*)/g)].map((m) => m[1]);
+    if (entries.join('|') !== t.nav.map((n) => n.label).join('|')) F.menu.push(`${rel} : entrées « ${entries.join(' | ')} » ≠ en-tête « ${t.nav.map((n) => n.label).join(' | ')} »`);
+    const met = (/<details class="mnav-met">[\s\S]*?<\/details>/.exec(list) || [''])[0];
+    const metLinks = [...met.matchAll(/<a (?:class="mnav-all" )?href="[^"]*">([^<]*)/g)].map((m) => m[1].trim());
+    const wantMet = [...t.metiers_nav.map(([, l]) => l), ...(t.metiers_all ? [t.metiers_all[1]] : [])];
+    if (metLinks.join('|') !== wantMet.join('|')) F.menu.push(`${rel} : « ${t.nav.find((n) => n.drop).label} » : ${metLinks.length} lien(s) au lieu de ${wantMet.length}`);
     /* pied de page : après Contact, dans la dernière colonne */
     const cols = (/<div class="ft-cols">([\s\S]*?)<\/div><\/div>\n/.exec(html) || [])[1] || '';
     const last = cols.split('<div><b>').pop();
@@ -150,7 +171,7 @@ async function browserChecks(root, browser, { widths = [360, 390, 768, 1024, 105
       /* rester sur la page après le clic : la navigation vers l'application est empêchée APRÈS celya.js */
       addEventListener('click', (e) => { if (e.target.closest && e.target.closest('a[data-app]')) e.preventDefault(); });
     }, consent);
-    await ctx.route('**/*', (r) => (r.request().url().startsWith('http://127.0.0.1') ? r.continue() : r.abort()));
+    await ctx.route('**/*', (r) => (isLocal(r.request().url()) ? r.continue() : r.abort()));
     return ctx;
   };
   /* layout */
@@ -178,14 +199,83 @@ async function browserChecks(root, browser, { widths = [360, 390, 768, 1024, 105
         const m = await p.evaluate(() => {
           const n = document.querySelector('.mnav'), a = document.querySelector('.mnav-app'), N = n.getBoundingClientRect();
           if (!a) return { missing: true };
-          a.scrollIntoView({ block: 'nearest' });
-          const kids = [...a.children].map((e) => [e.dataset.app || 'demo', e.getBoundingClientRect()]);
-          const inside = kids.every(([, b]) => b.width > 0 && b.left >= N.left - 0.5 && b.right <= N.right + 0.5);
-          const stacked = kids.every((x, i) => !i || kids[i - 1][1].bottom <= x[1].top + 0.5);
-          return { order: kids.map((k) => k[0]), inside, stacked, sw: document.documentElement.scrollWidth, vw: innerWidth, beforeLang: !!(a.nextElementSibling && a.nextElementSibling.classList.contains('mnav-lang')) };
+          const kids = [...a.querySelectorAll('[data-app], .mnav-lang a')].map((e) => [e.dataset.app || 'lang', e.getBoundingClientRect()]);
+          const inside = kids.every(([, b]) => b.width > 0 && b.left >= N.left - 0.5 && b.right <= N.right + 0.5 && b.bottom <= N.bottom + 0.5);
+          const z = { top: 0, bottom: 0, left: 0, right: 0 }, gb = (e) => (e ? e.getBoundingClientRect() : z);
+          const tr = gb(a.querySelector('[data-app=signup]')), lg = gb(a.querySelector('[data-app=login]')), la = gb(a.querySelector('.mnav-lang'));
+          return { order: kids.map((k) => k[0]).filter((x, i, l) => l.indexOf(x) === i), inside, row: tr.bottom <= lg.top + 0.5 && Math.abs(lg.top - la.top) < 8 && lg.right <= la.left, sw: document.documentElement.scrollWidth, vw: innerWidth };
         });
-        if (!(m.inside && m.stacked && m.beforeLang && m.sw === m.vw && m.order.join() === 'signup,demo,login')) F.layout.push(`${rel} @${w} menu ouvert : ${JSON.stringify(m)}`);
+        if (!(m.inside && m.row && m.sw === m.vw && m.order.join() === 'signup,login,lang')) F.layout.push(`${rel} @${w} menu ouvert : ${JSON.stringify(m)}`);
       }
+      await ctx.close();
+    }
+  }
+  /* mnav : le menu mobile ouvert (23/11/2026) */
+  F.mnav = [];
+  for (const [rel, w, h] of [['index.html', 360, 640], ['nl/index.html', 390, 844], ['en/index.html', 768, 1024], ['prise-de-message.html', 360, 640]]) {
+    for (const banner of [true, false]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+      if (!banner) await ctx.addInitScript(() => { try { localStorage.setItem('celya-consent', 'denied'); } catch (e) {} });
+      await ctx.route('**/*', (r) => (isLocal(r.request().url()) ? r.continue() : r.abort()));
+      const p = await ctx.newPage();
+      await p.goto(base + rel, { waitUntil: 'load' });
+      await p.evaluate(() => document.fonts.ready);
+      await p.evaluate(() => scrollTo(0, 900));
+      await p.waitForTimeout(350);
+      const tag = `${rel} @${w}×${h}${banner ? ' bandeau cookies' : ''}`;
+      const before = await p.evaluate(() => ({ y: scrollY, label: document.querySelector('.burger').getAttribute('aria-label') }));
+      /* un appui direct, comme un doigt : le clic de Playwright ferait d'abord défiler la page vers l'en-tête collant (scrollIntoView) */
+      const tap = () => p.evaluate(() => document.querySelector('.burger').click());
+      await tap();
+      await p.waitForTimeout(300);
+      const r = await p.evaluate(() => {
+        const q = (s) => document.querySelector(s), R = (e) => e.getBoundingClientRect();
+        const nav = q('.mnav'), N = R(nav), hdr = R(q('.hdr-in')), ban = q('.cbanner'), B = ban ? R(ban) : null, veil = q('.mnav-veil');
+        const vis = (e) => { if (!e) return false; const b = R(e); return b.width > 0 && b.top >= N.top - 0.5 && b.bottom <= N.bottom + 0.5 && b.bottom <= innerHeight && (!B || b.bottom <= B.top + 0.5); };
+        const acts = [q('.mnav-app [data-app=signup]'), q('.mnav-app [data-app=login]'), ...document.querySelectorAll('.mnav-lang a')];
+        const targets = [...nav.querySelectorAll('.mnav-list > a, .mnav-met > summary, .mnav-app a')].map((e) => Math.round(R(e).height));
+        const bar = q('.mbar');
+        const vs = getComputedStyle(veil);
+        return {
+          expanded: q('.burger').getAttribute('aria-expanded'), label: q('.burger').getAttribute('aria-label'),
+          cross: getComputedStyle(q('.burger i')).transform !== getComputedStyle(q('.burger i + i')).transform && /matrix\(0\.7/.test(getComputedStyle(q('.burger i')).transform),
+          under: N.top >= hdr.bottom - 0.5, aboveBanner: !B || N.bottom <= B.top + 0.5, actsVisible: acts.every(vis), nActs: acts.length,
+          minTarget: Math.min(...targets), veil: vs.display !== 'none' && /rgba\(/.test(vs.backgroundColor) && R(veil).height >= innerHeight - 1,
+          noBlur: [nav, veil, q('.hdr')].every((e) => getComputedStyle(e).backdropFilter === 'none' && getComputedStyle(e).filter === 'none'),
+          locked: getComputedStyle(document.documentElement).overflow === 'hidden' || getComputedStyle(document.body).overflow === 'hidden',
+          mbar: bar ? bar.checkVisibility({ visibilityProperty: true }) : false, sw: document.documentElement.scrollWidth, vw: innerWidth,
+        };
+      });
+      const okMenu = r.expanded === 'true' && r.label !== before.label && r.cross && r.under && r.aboveBanner && r.actsVisible && r.minTarget >= 44 && r.veil && r.noBlur && r.locked && !r.mbar && r.sw === r.vw;
+      if (!okMenu) F.mnav.push(`${tag} : ${JSON.stringify(r)} (fermé : « ${before.label} »)`);
+      /* la page derrière ne défile pas */
+      await p.mouse.move(w / 2, h - 40); await p.mouse.wheel(0, 600); await p.waitForTimeout(250);
+      if ((await p.evaluate(() => scrollY)) !== before.y) F.mnav.push(`${tag} : la page derrière défile, menu ouvert`);
+      /* « Votre métier » s'ouvre sur place, ses liens dans le panneau */
+      await p.click('.mnav-met > summary');
+      const met = await p.evaluate(() => {
+        const d = document.querySelector('.mnav-met'), a = d.querySelectorAll('.mnav-grid a'), N = document.querySelector('.mnav').getBoundingClientRect(), ban = document.querySelector('.cbanner'), B = ban ? ban.getBoundingClientRect() : null;
+        const acts = [document.querySelector('.mnav-app [data-app=signup]'), document.querySelector('.mnav-app [data-app=login]'), ...document.querySelectorAll('.mnav-lang a')];
+        return { open: d.open, n: a.length, inside: [...a].every((x) => { const b = x.getBoundingClientRect(); return b.left >= N.left && b.right <= N.right; }), still: !!document.querySelector('body.mnav-open'),
+          aboveBanner: N.bottom <= innerHeight && (!B || N.bottom <= B.top + 0.5), acts: acts.every((e) => { if (!e) return false; const b = e.getBoundingClientRect(); return b.bottom <= N.bottom + 0.5 && b.top >= N.top; }) };
+      });
+      if (!(met.open && met.n >= 4 && met.inside && met.still && met.aboveBanner && met.acts)) F.mnav.push(`${tag} : « Votre métier » : ${JSON.stringify(met)}`);
+      /* fermeture : le voile */
+      const hdrB = await p.evaluate(() => document.querySelector('.mnav').getBoundingClientRect().bottom);
+      await p.mouse.click(w / 2, Math.min(h - 10, hdrB + 30)).catch(() => {});
+      await p.waitForTimeout(200);
+      const shut = await p.evaluate(() => ({ open: document.body.classList.contains('mnav-open'), label: document.querySelector('.burger').getAttribute('aria-label') }));
+      const banTop = await p.evaluate(() => { const b = document.querySelector('.cbanner'); return b ? b.getBoundingClientRect().top : Infinity; });
+      if (hdrB + 30 < Math.min(h - 10, banTop) && (shut.open || shut.label !== before.label)) F.mnav.push(`${tag} : un appui sur le voile ne ferme pas le menu (${JSON.stringify(shut)})`);
+      /* fermeture : Échap */
+      await tap(); await p.keyboard.press('Escape'); await p.waitForTimeout(100);
+      if (await p.evaluate(() => document.body.classList.contains('mnav-open'))) F.mnav.push(`${tag} : Échap ne ferme pas le menu`);
+      /* fermeture : un lien (ancre de la page, pour rester sur place) */
+      await tap();
+      await p.evaluate(() => { const a = document.querySelector('.mnav-list > a'); a.setAttribute('href', '#main'); });
+      await p.click('.mnav-list > a');
+      await p.waitForTimeout(150);
+      if (await p.evaluate(() => document.body.classList.contains('mnav-open') || document.querySelector('.burger').getAttribute('aria-expanded') !== 'false')) F.mnav.push(`${tag} : un appui sur un lien ne ferme pas le menu`);
       await ctx.close();
     }
   }
@@ -227,7 +317,7 @@ async function run(root, { quiet = false, browserOpts } = {}) {
   await browser.close();
   const F = { ...s.F, ...b };
   if (!quiet) {
-    const label = { url: 'adresses écrites une seule fois (shell.mjs)', header: `en-tête des ${s.normal} pages avec menu : Se connecter, démo ; langue en sélecteur`, menu: 'menu mobile : essai, démo, connexion avant la langue', footer: 'pied de page : Se connecter après Contact', pricing: `${s.prices} grilles de prix : essai, démo, règle de l'essai`, lp: `${s.lps} pages d'atterrissage : aucun lien vers l'application`, layout: 'en-tête dans son cadre, ordre, menu (360 à 1440 px, FR/NL/EN)', events: 'sign_up_start / login_click avec accord, rien sans' };
+    const label = { url: 'adresses écrites une seule fois (shell.mjs)', header: `en-tête des ${s.normal} pages avec menu : Se connecter, démo ; langue en sélecteur`, menu: 'menu mobile : entrées de l\'en-tête, métiers dans le HTML, essai puis connexion et langues, pas de démo', footer: 'pied de page : Se connecter après Contact', pricing: `${s.prices} grilles de prix : essai, démo, règle de l'essai`, lp: `${s.lps} pages d'atterrissage : aucun lien vers l'application`, layout: 'en-tête dans son cadre, ordre, menu (360 à 1440 px, FR/NL/EN)', mnav: 'menu ouvert : croix, « Fermer », voile, page figée, barre cachée, actions visibles à 360 × 640 bandeau affiché, 44 px, fermeture au voile, au lien, à Échap', events: 'sign_up_start / login_click avec accord, rien sans' };
     for (const [k, v] of Object.entries(F)) {
       console.log(`  ${v.length ? '✗' : '✓'} ${label[k]}`);
       v.slice(0, 8).forEach((x) => console.log(`      ${x}`));
@@ -247,6 +337,17 @@ const MUTANTS = [
   ['header', '« Appeler Janet » revient dans l\'en-tête', (r) => edit(r, 'garages.html', /(<div class="hdr-cta">)/, '$1<a class="btn btn-orange btn-sm hdr-call" href="tel:+32460254413" data-call>x</a>')],
   ['header', '?lang=nl oublié', (r) => edit(r, 'nl/garages.html', 'https://app.celya.be/login?lang=nl" data-app="login" data-place="header"', 'https://app.celya.be/login" data-app="login" data-place="header"')],
   ['menu', 'connexion retirée du menu', (r) => edit(r, 'nl/index.html', /<a class="mnav-login"[^>]*>[^<]*<\/a>/, '')],
+  ['menu', '« Demander une démo » revient dans le panneau', (r) => edit(r, 'prix.html', /(<div class="mnav-app"><a class="btn btn-orange"[^>]*>[^<]*<\/a>)/, '$1<a class="btn btn-line" href="demo.html" data-demo>Demander une démo</a>')],
+  ['menu', 'un métier manque dans le panneau', (r) => edit(r, 'garages.html', /(<div class="mnav-grid">)<a href="[^"]*">[^<]*<\/a>/, '$1')],
+  ['menu', 'entrées dans le désordre', (r) => edit(r, 'en/index.html', /(<div class="mnav-list">)(<a href="[^"]*">[^<]*<\/a>)(<details[\s\S]*?<\/details>)/, '$1$3$2')],
+  ['mnav', 'le voile ne ferme plus', (r) => edit(r, 'celya.js', '(x===veil||(nav&&nav.contains(x)&&x.closest(\'a\')))', '(nav&&nav.contains(x)&&x.closest(\'a\'))')],
+  ['mnav', 'un lien ne ferme plus', (r) => edit(r, 'celya.js', '(x===veil||(nav&&nav.contains(x)&&x.closest(\'a\')))', '(x===veil)')],
+  ['mnav', 'la page derrière défile', (r) => edit(r, 'celya.css', '  html.mnav-open{overflow:hidden}', '')],
+  ['mnav', 'la barre d\'appel reste', (r) => edit(r, 'celya.css', '.mnav-open .mbar,.mbar-hide .mbar{', '.mbar-hide .mbar{')],
+  ['mnav', 'le panneau passe sous le bandeau cookies', (r) => edit(r, 'celya.css', 'max-height:calc(100dvh - var(--mnav-top) - var(--cbanner-h,0px))}', 'max-height:none}')],
+  ['mnav', 'aria-label figé sur « Menu »', (r) => edit(r, 'celya.js', "var l=btn.getAttribute(open?'data-close':'data-open');", "var l=btn.getAttribute('data-open');")],
+  ['mnav', 'zones d\'appui trop petites', (r) => edit(r, 'celya.css', '.mnav-lang a{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:0 6px}', '.mnav-lang a{display:inline-flex;padding:4px}')],
+  ['mnav', 'voile flouté', (r) => edit(r, 'celya.css', '.mnav-veil{position:fixed;inset:0;z-index:-1;background:rgba(21,21,21,.42)}', '.mnav-veil{position:fixed;inset:0;z-index:-1;background:rgba(21,21,21,.42);backdrop-filter:blur(4px)}')],
   ['footer', 'connexion retirée du pied de page', (r) => edit(r, 'en/index.html', /<a class="ft-login"[^>]*>[^<]*<\/a>/, '')],
   ['pricing', 'essai retiré de la grille', (r) => edit(r, 'prix.html', /(<div class="price-go">)<a class="btn btn-orange"[^>]*>[^<]*<\/a>/, '$1')],
   ['pricing', 'règle de l\'essai modifiée', (r) => edit(r, 'nl/prijzen.html', /(<div class="price-go">[\s\S]*?<small>)[^<]*/, '$130 dagen gratis.')],
@@ -275,7 +376,7 @@ async function mutants() {
   for (const [id, what, apply] of MUTANTS) {
     const r = copy();
     apply(r);
-    const browserOpts = ['layout', 'events'].includes(id) ? undefined : { widths: [1440], pages: ['index.html'] };
+    const browserOpts = ['layout', 'events', 'mnav'].includes(id) ? undefined : { widths: [1440], pages: ['index.html'] };
     const F = await run(r, { quiet: true, browserOpts });
     const hit = F[id].length > 0;
     killed += hit;
