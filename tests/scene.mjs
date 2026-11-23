@@ -46,6 +46,8 @@ const require = createRequire(import.meta.url);
 let chromium;
 try { ({ chromium } = require('playwright')); } catch { ({ chromium } = require('/opt/node22/lib/node_modules/playwright')); }
 
+/* hôte exact, jamais un préfixe d'URL (CodeQL : « Incomplete URL substring sanitization ») */
+const isLocal = (u) => { try { const h = new URL(u).hostname; return h === '127.0.0.1' || h === 'localhost'; } catch { return false; } };
 const fails = [];
 const ok = (c, m) => { if (!c) fails.push(m); if (!c || process.env.VERBOSE) console.log(`  ${c ? '✓' : '✗'} ${m}`); };
 const data = loadData();
@@ -204,7 +206,7 @@ for (const [w, h] of [[1440, 900], [360, 640]]) {
     for (const [w, h] of [[1440, 900], [1280, 720], [390, 844], [360, 640]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h } });
       await ctx.addInitScript(() => { try { localStorage.setItem('celya-consent', 'granted'); } catch (e) {} });
-      await ctx.route('**/*', (r) => (r.request().url().startsWith('http://127.0.0.1') ? r.continue() : r.abort()));
+      await ctx.route('**/*', (r) => (isLocal(r.request().url()) ? r.continue() : r.abort()));
       const p = await ctx.newPage();
       await p.goto(base + rel, { waitUntil: 'load' });
       await p.evaluate(() => document.fonts.ready);

@@ -52,6 +52,8 @@ const require = createRequire(import.meta.url);
 let chromium;
 try { ({ chromium } = require('playwright')); } catch { ({ chromium } = require('/opt/node22/lib/node_modules/playwright')); }
 
+/* hôte exact, jamais un préfixe d'URL (CodeQL : « Incomplete URL substring sanitization ») */
+const isLocal = (u) => { try { const h = new URL(u).hostname; return h === '127.0.0.1' || h === 'localhost'; } catch { return false; } };
 const LOGIN = 'https://app.celya.be/login';
 const SIGNUP = 'https://app.celya.be/inscription';
 const href = (u, lang) => (lang === 'fr' ? u : `${u}?lang=${lang}`);
@@ -169,7 +171,7 @@ async function browserChecks(root, browser, { widths = [360, 390, 768, 1024, 105
       /* rester sur la page après le clic : la navigation vers l'application est empêchée APRÈS celya.js */
       addEventListener('click', (e) => { if (e.target.closest && e.target.closest('a[data-app]')) e.preventDefault(); });
     }, consent);
-    await ctx.route('**/*', (r) => (r.request().url().startsWith('http://127.0.0.1') ? r.continue() : r.abort()));
+    await ctx.route('**/*', (r) => (isLocal(r.request().url()) ? r.continue() : r.abort()));
     return ctx;
   };
   /* layout */
@@ -214,7 +216,7 @@ async function browserChecks(root, browser, { widths = [360, 390, 768, 1024, 105
     for (const banner of [true, false]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h } });
       if (!banner) await ctx.addInitScript(() => { try { localStorage.setItem('celya-consent', 'denied'); } catch (e) {} });
-      await ctx.route('**/*', (r) => (r.request().url().startsWith('http://127.0.0.1') ? r.continue() : r.abort()));
+      await ctx.route('**/*', (r) => (isLocal(r.request().url()) ? r.continue() : r.abort()));
       const p = await ctx.newPage();
       await p.goto(base + rel, { waitUntil: 'load' });
       await p.evaluate(() => document.fonts.ready);

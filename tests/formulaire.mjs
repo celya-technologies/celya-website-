@@ -66,6 +66,8 @@ const DATA = loadData();
 const fails = [];
 const ok = (cond, msg) => { if (!cond) fails.push(msg); console.log(`  ${cond ? '✓' : '✗'} ${msg}`); };
 
+/* hôte exact, jamais un préfixe d'URL (CodeQL : « Incomplete URL substring sanitization ») */
+const isLocal = (u) => { try { const h = new URL(u).hostname; return h === '127.0.0.1' || h === 'localhost'; } catch { return false; } };
 async function context(browser, { consent, width = 1280, height = 900 } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height } });
   if (consent) await ctx.addInitScript((v) => { try { localStorage.setItem('celya-consent', v); } catch (e) {} }, consent);
@@ -77,7 +79,7 @@ async function context(browser, { consent, width = 1280, height = 900 } = {}) {
       leads.push(JSON.parse(route.request().postData() || '{}'));
       return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: '{"ok":true}' });
     }
-    if (!u.startsWith('http://127.0.0.1')) { external.push(u); return route.abort(); }
+    if (!isLocal(u)) { external.push(u); return route.abort(); }
     return route.continue();
   });
   return { ctx, external, leads };
