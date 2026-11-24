@@ -103,7 +103,7 @@ function statics(root) {
     /* en-tête */
     const cta = (/<div class="hdr-cta">([\s\S]*?)<\/div>\n<button class="burger"/.exec(html) || [])[1] || '';
     const want = new RegExp(`^<a class="hdr-login" href="${reEsc(L)}" data-app="login" data-place="header">${reEsc(t.login)}</a>` +
-      `<a class="btn btn-orange btn-sm hdr-demo" href="[^"]+" data-demo><span class="hd-l">${reEsc(t.cta_demo)}</span><span class="hd-s" aria-hidden="true">${reEsc(t.demo_short)}</span></a>$`);
+      `<a class="btn btn-orange btn-sm hdr-demo" href="[^"]+" data-demo aria-label="${reEsc(t.cta_demo)}"><span class="hd-l">${reEsc(t.cta_demo)}</span><span class="hd-s">${reEsc(t.demo_short)}</span></a>$`);
     if (!want.test(cta)) F.header.push(`${rel} : en-tête « ${cta.slice(0, 160)}… »`);
     const hdr = (/<header class="hdr">[\s\S]*?<\/header>/.exec(html) || [''])[0];
     if (/<div class="hdr-lang">/.test(hdr)) F.header.push(`${rel} : langues en liens côte à côte dans l'en-tête`);
@@ -201,7 +201,7 @@ async function browserChecks(root, browser, { widths = [360, 390, 768, 1024, 105
           : shown(document.querySelector('.hdr-demo .hd-l')) && !shown(document.querySelector('.hdr-demo .hd-s')) ? 'complet' : 'les deux ou aucun';
         return { out, sw: document.documentElement.scrollWidth, vw: innerWidth, order: order.map((x) => x[0]), sorted, lines, label, lang: document.documentElement.lang, burger: vis(document.querySelector('.burger')), nav: vis(document.querySelector('.hdr-nav')) };
       });
-      /* nom accessible du lien de démo : toujours le libellé complet, même quand le court s'affiche */
+      /* nom accessible du lien de démo : toujours le libellé complet (son aria-label), même quand le court s'affiche */
       const full = i18n[r.lang].cta_demo;
       r.name = (await p.getByRole('link', { name: full, exact: true }).and(p.locator('.hdr-cta .hdr-demo')).count()) === 1 ? full : 'absent';
       /* 24/11/2026 : « Se connecter » visible à toutes les largeurs, à gauche du bouton de démo */
@@ -347,7 +347,7 @@ async function run(root, { quiet = false, browserOpts } = {}) {
 const MUTANTS = [
   ['url', 'adresse recopiée dans un composant', (r) => fs.appendFileSync(path.join(r, '_src/components/blocks.mjs'), `\n/* ${LOGIN} */\n`)],
   ['header', '« Se connecter » après la démo', (r) => edit(r, 'index.html', /(<a class="hdr-login"[^>]*>[^<]*<\/a>)(<a class="btn btn-orange btn-sm hdr-demo"[^>]*>[\s\S]*?<\/a>)/, '$2$1')],
-  ['header', 'libellé court retiré de l\'en-tête', (r) => edit(r, 'en/index.html', /<span class="hd-s" aria-hidden="true">[^<]*<\/span>/, '')],
+  ['header', 'libellé court retiré de l\'en-tête', (r) => edit(r, 'en/index.html', /<span class="hd-s">[^<]*<\/span>/, '')],
   ['header', '« Essai gratuit » revient dans l\'en-tête', (r) => edit(r, 'prix.html', /(<a class="btn btn-orange btn-sm hdr-demo"[^>]*>[\s\S]*?<\/a>)<\/div>/, `$1<a class="btn btn-orange btn-sm hdr-trial" href="${SIGNUP}" data-app="signup" data-place="header">Essai gratuit</a></div>`)],
   ['header', 'langues de nouveau côte à côte', (r) => edit(r, 'en/index.html', /<div class="drop hdr-lang">[\s\S]*?<\/div><\/div>/, '<div class="hdr-lang"><a href="../index.html">FR</a><a href="../nl/index.html">NL</a><a class="on" href="index.html">EN</a></div>')],
   ['header', '« Appeler Janet » revient dans l\'en-tête', (r) => edit(r, 'garages.html', /(<div class="hdr-cta">)/, '$1<a class="btn btn-orange btn-sm hdr-call" href="tel:+32460254413" data-call>x</a>')],
@@ -370,7 +370,7 @@ const MUTANTS = [
   ['lp', 'connexion sur une page d\'atterrissage', (r) => edit(r, 'lp/garages.html', /(<\/footer>)/, `<a href="${LOGIN}">x</a>$1`)],
   ['layout', 'seuil du menu ramené à 1040 px', (r) => edit(r, 'celya.css', '@media (max-width:1180px){', '@media (max-width:1040px){')],
   ['layout', 'connexion de nouveau masquée sous 720 px', (r) => edit(r, 'celya.css', '  .hdr-login{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;font-size:14px}', '  .hdr-login{display:none}')],
-  ['layout', 'libellé complet masqué par display:none sous 720 px (plus de nom accessible)', (r) => edit(r, 'celya.css', '  .hdr-demo .hd-l{position:absolute!important;', '  .hdr-demo .hd-l{display:none;position:absolute!important;')],
+  ['layout', 'aria-label retiré du lien de démo (le nom devient « Démo » sous 720 px)', (r) => edit(r, 'index.html', /(<a class="btn btn-orange btn-sm hdr-demo" href="[^"]+" data-demo) aria-label="[^"]*"/, '$1')],
   ['layout', 'libellé court affiché sur ordinateur', (r) => edit(r, 'celya.css', '.hdr-demo .hd-s{display:none}', '.hdr-demo .hd-s{display:inline}')],
   ['layout', 'menu : bloc d\'accès qui déborde', (r) => edit(r, 'celya.css', '.mnav-app .btn{width:100%}', '.mnav-app .btn{width:130%}')],
   ['events', 'sign_up_start renommé', (r) => edit(r, 'celya.js', "'sign_up_start'", "'signup_start'")],
