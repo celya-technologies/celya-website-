@@ -130,12 +130,15 @@ ${callBtn(c, 'btn-orange btn-sm hdr-call')}
   /* en-tête (19/11/2026, décision de Bora) : « Se connecter » en lien texte et un
    * seul bouton, « Demander une démo » en orange (la conversion principale).
    * « Essai gratuit » vit sous les grilles de prix et dans le menu mobile ;
-   * « Appeler Janet » reste dans les héros, la barre mobile et les CTA. */
+   * « Appeler Janet » reste dans les héros, la barre mobile et les CTA.
+   * 24/11/2026 (décision de Bora) : le lien de démo porte deux libellés, le
+   * complet (.hd-l) et le court (.hd-s, « Démo »), affiché sous 720 px ; le
+   * complet reste lu par les lecteurs d'écran. demoBtn() ne change pas. */
   return `<header class="hdr"><div class="hdr-in">
 <a class="hdr-logo" href="${c.home}" aria-label="${esc(t.home_label)}">${logo()}</a>
 <nav class="hdr-nav" aria-label="Navigation">${nav}</nav>
 ${langDrop(c)}
-<div class="hdr-cta">${loginLink(c, 'hdr-login', 'header')}${demoBtn(c, 'btn-orange btn-sm hdr-demo')}</div>
+<div class="hdr-cta">${loginLink(c, 'hdr-login', 'header')}<a class="btn btn-orange btn-sm hdr-demo" href="${c.L(c.t.demo_href)}" data-demo><span class="hd-l">${c.t.cta_demo}</span><span class="hd-s" aria-hidden="true">${c.t.demo_short}</span></a></div>
 <button class="burger" type="button" aria-expanded="false" aria-controls="mnav" aria-label="${esc(t.menu)}" data-open="${esc(t.menu)}" data-close="${esc(t.close)}"><span class="burger-l" aria-hidden="true">${t.menu}</span><i></i><i></i></button>
 </div>
 <nav class="mnav" id="mnav" aria-label="${esc(t.menu)}">${mnav}</nav>

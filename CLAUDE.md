@@ -429,8 +429,13 @@ Brief : `docs/maquettes-16-11/PROMPT-conversion-16-11.md`, aperçu validé
   conversion principale. **« Essai gratuit » n'est plus dans l'en-tête** : il
   vit sous les grilles de prix et dans le menu mobile. « Appeler Janet » n'y
   est pas non plus ; il reste dans les héros, la barre mobile, les CTA et
-  l'en-tête des pages d'atterrissage. Sous 720 px, seul « Demander une démo »
-  reste à côté du menu. **La langue est un sélecteur « FR ▾ »** (`langDrop`,
+  l'en-tête des pages d'atterrissage. **Sous 720 px (décision de Bora du
+  24/11/2026, qui remplace celle du 19/11)**, la barre montre, dans cet ordre,
+  le logo, « Se connecter » (lien texte), le bouton orange de démo au libellé
+  court, « Démo » (NL « Demo », EN « Demo » ; clé `demo_short`, dans la barre
+  seulement : le lien garde son nom accessible complet), et le menu ; ailleurs
+  (héros, bas de page, menu), le libellé complet ne change pas, et au-dessus de
+  720 px rien ne change. **La langue est un sélecteur « FR ▾ »** (`langDrop`,
   `.drop.hdr-lang`) qui ouvre les autres langues au survol et au clavier,
   comme le menu des métiers ; le menu mobile garde ses trois liens.
 - **Le menu passe en burger sous 1181 px** (`max-width:1180px` dans

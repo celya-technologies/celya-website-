@@ -138,6 +138,8 @@ ul,ol{padding-left:1.2em;margin:0 0 1em}
 /* accès à l'application (19/11/2026) : « Se connecter » en lien texte, à gauche du bouton de démo */
 .hdr-login{padding:10px 8px;border-radius:10px;font-size:15px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap}
 .hdr-login:hover{background:var(--page)}
+/* libellé court du bouton de démo de l'en-tête (24/11/2026) : affiché sous 720 px seulement */
+.hdr-demo .hd-s{display:none}
 .burger{display:none;margin-left:auto;align-items:center;gap:10px;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--page);font:600 14px var(--sans);color:var(--ink);cursor:pointer}
 .burger i{display:block;width:16px;height:2px;background:currentColor;border-radius:2px;transition:transform .2s ease}
 .burger i+i{margin-left:-26px;transform:translateY(6px)}
@@ -188,7 +190,11 @@ ul,ol{padding-left:1.2em;margin:0 0 1em}
   .hdr{top:8px;margin-top:8px;padding:0 10px}
   .hdr-in{gap:10px;padding:6px 6px 6px 14px;min-height:58px}
   .logo{width:84px;height:36px}
-  .hdr-login{display:none}
+  /* 24/11/2026 (décision de Bora) : « Se connecter » reste visible sous 720 px, à gauche
+     d'un bouton de démo au libellé court ; le libellé complet reste lu (motif .sr) */
+  .hdr-login{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;font-size:14px}
+  .hdr-demo .hd-s{display:inline}
+  .hdr-demo .hd-l{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   .hdr-call,.hdr-demo{padding:8px 14px;font-size:14px;min-height:44px}
   .burger{padding:0 12px}
   .burger-l{display:none}

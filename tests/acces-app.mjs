@@ -7,7 +7,8 @@
  *
  *   url      chaque adresse est écrite une seule fois dans _src/ et data/ ;
  *   header   pages avec menu : dans .hdr-cta, « Se connecter » (lien texte)
- *            puis « Demander une démo » (bouton orange), rien d'autre : ni
+ *            puis « Demander une démo » (bouton orange, qui porte aussi son
+ *            libellé court « Démo », 24/11/2026), rien d'autre : ni
  *            « Essai gratuit », ni « Appeler Janet » ; la langue est un
  *            sélecteur « FR ▾ » (révision du 19/11/2026, décision de Bora) ;
  *   menu     menu mobile (refait le 23/11/2026, décision de Bora) : les
@@ -23,8 +24,12 @@
  *            règle de l'essai de data/offre.json ;
  *   lp       pages d'atterrissage : aucun lien vers l'application, la grille
  *            garde sa seule démo vers le formulaire de la page ;
- *   layout   l'en-tête tient dans son cadre (360 à 1440 px, FR/NL/EN) ; sous
- *            720 px seul « Demander une démo » reste à côté du menu ; le menu
+ *   layout   l'en-tête tient dans son cadre (360 à 1440 px, FR/NL/EN) ; à
+ *            toutes les largeurs « Se connecter » est visible, à gauche du
+ *            bouton de démo (décision de Bora du 24/11/2026, qui remplace
+ *            « sous 720 px, seul Demander une démo reste à côté du menu ») ;
+ *            sous 720 px le bouton affiche son libellé court, au-dessus le
+ *            complet ; partout il garde son nom accessible complet ; le menu
  *            ouvert garde le bloc dans son cadre ;
  *   mnav     le menu ouvert (360, 390, 768 px ; FR, NL, EN) : la croix et
  *            « Fermer » ; la page figée et la barre d'appel cachée ; le
@@ -98,7 +103,7 @@ function statics(root) {
     /* en-tête */
     const cta = (/<div class="hdr-cta">([\s\S]*?)<\/div>\n<button class="burger"/.exec(html) || [])[1] || '';
     const want = new RegExp(`^<a class="hdr-login" href="${reEsc(L)}" data-app="login" data-place="header">${reEsc(t.login)}</a>` +
-      `<a class="btn btn-orange btn-sm hdr-demo" href="[^"]+" data-demo>${reEsc(t.cta_demo)}</a>$`);
+      `<a class="btn btn-orange btn-sm hdr-demo" href="[^"]+" data-demo><span class="hd-l">${reEsc(t.cta_demo)}</span><span class="hd-s" aria-hidden="true">${reEsc(t.demo_short)}</span></a>$`);
     if (!want.test(cta)) F.header.push(`${rel} : en-tête « ${cta.slice(0, 160)}… »`);
     const hdr = (/<header class="hdr">[\s\S]*?<\/header>/.exec(html) || [''])[0];
     if (/<div class="hdr-lang">/.test(hdr)) F.header.push(`${rel} : langues en liens côte à côte dans l'en-tête`);
@@ -163,6 +168,7 @@ async function browserChecks(root, browser, { widths = [360, 390, 768, 1024, 105
   const srv = await serve(root);
   const base = `http://127.0.0.1:${srv.address().port}/`;
   const css = fs.readFileSync(path.join(root, 'celya.css'), 'utf8');
+  const i18n = JSON.parse(fs.readFileSync(path.join(root, 'data/i18n.json'), 'utf8'));
   const burgerMax = +((/@media \(max-width:(\d+)px\)\{[^\n]*\n\s*\.hdr-nav,\.hdr-lang\{display:none\}/.exec(css) || [])[1] || 0);
   const newCtx = async (w, consent) => {
     const ctx = await browser.newContext({ viewport: { width: w, height: 800 }, reducedMotion: 'reduce' });
@@ -189,10 +195,19 @@ async function browserChecks(root, browser, { widths = [360, 390, 768, 1024, 105
         const order = [...document.querySelectorAll('.hdr-cta > *')].filter(vis).map((e) => [e.className.split(' ').pop(), e.getBoundingClientRect()]);
         const sorted = order.every((x, i) => !i || order[i - 1][1].right <= x[1].left);
         const lines = [...document.querySelectorAll('.hdr-cta > *')].filter(vis).every((e) => e.getClientRects().length === 1 && e.getBoundingClientRect().height < 60);
-        return { out, sw: document.documentElement.scrollWidth, vw: innerWidth, order: order.map((x) => x[0]), sorted, lines, burger: vis(document.querySelector('.burger')), nav: vis(document.querySelector('.hdr-nav')) };
+        /* libellé affiché : le court sous 720 px, le complet au-dessus (24/11/2026) */
+        const shown = (e) => e && e.getBoundingClientRect().width > 2 && getComputedStyle(e).display !== 'none';
+        const label = shown(document.querySelector('.hdr-demo .hd-s')) && !shown(document.querySelector('.hdr-demo .hd-l')) ? 'court'
+          : shown(document.querySelector('.hdr-demo .hd-l')) && !shown(document.querySelector('.hdr-demo .hd-s')) ? 'complet' : 'les deux ou aucun';
+        return { out, sw: document.documentElement.scrollWidth, vw: innerWidth, order: order.map((x) => x[0]), sorted, lines, label, lang: document.documentElement.lang, burger: vis(document.querySelector('.burger')), nav: vis(document.querySelector('.hdr-nav')) };
       });
-      const wantOrder = w <= 720 ? ['hdr-demo'] : ['hdr-login', 'hdr-demo'];
-      const okLayout = !r.out.length && r.sw === r.vw && r.sorted && r.lines && JSON.stringify(r.order) === JSON.stringify(wantOrder) && r.burger === (w <= burgerMax) && r.nav === (w > burgerMax);
+      /* nom accessible du lien de démo : toujours le libellé complet, même quand le court s'affiche */
+      const full = i18n[r.lang].cta_demo;
+      r.name = (await p.getByRole('link', { name: full, exact: true }).and(p.locator('.hdr-cta .hdr-demo')).count()) === 1 ? full : 'absent';
+      /* 24/11/2026 : « Se connecter » visible à toutes les largeurs, à gauche du bouton de démo */
+      const wantOrder = ['hdr-login', 'hdr-demo'];
+      const okLayout = !r.out.length && r.sw === r.vw && r.sorted && r.lines && JSON.stringify(r.order) === JSON.stringify(wantOrder)
+        && r.label === (w <= 720 ? 'court' : 'complet') && r.name === full && r.burger === (w <= burgerMax) && r.nav === (w > burgerMax);
       if (!okLayout) F.layout.push(`${rel} @${w} : ${JSON.stringify(r)}`);
       if (r.burger) {
         await p.click('.burger', { timeout: 3000 }).catch(() => {});
@@ -317,7 +332,7 @@ async function run(root, { quiet = false, browserOpts } = {}) {
   await browser.close();
   const F = { ...s.F, ...b };
   if (!quiet) {
-    const label = { url: 'adresses écrites une seule fois (shell.mjs)', header: `en-tête des ${s.normal} pages avec menu : Se connecter, démo ; langue en sélecteur`, menu: 'menu mobile : entrées de l\'en-tête, métiers dans le HTML, essai puis connexion et langues, pas de démo', footer: 'pied de page : Se connecter après Contact', pricing: `${s.prices} grilles de prix : essai, démo, règle de l'essai`, lp: `${s.lps} pages d'atterrissage : aucun lien vers l'application`, layout: 'en-tête dans son cadre, ordre, menu (360 à 1440 px, FR/NL/EN)', mnav: 'menu ouvert : croix, « Fermer », voile, page figée, barre cachée, actions visibles à 360 × 640 bandeau affiché, 44 px, fermeture au voile, au lien, à Échap', events: 'sign_up_start / login_click avec accord, rien sans' };
+    const label = { url: 'adresses écrites une seule fois (shell.mjs)', header: `en-tête des ${s.normal} pages avec menu : Se connecter, démo ; langue en sélecteur`, menu: 'menu mobile : entrées de l\'en-tête, métiers dans le HTML, essai puis connexion et langues, pas de démo', footer: 'pied de page : Se connecter après Contact', pricing: `${s.prices} grilles de prix : essai, démo, règle de l'essai`, lp: `${s.lps} pages d'atterrissage : aucun lien vers l'application`, layout: 'en-tête dans son cadre, Se connecter puis démo (court sous 720 px, nom complet), menu (360 à 1440 px, FR/NL/EN)', mnav: 'menu ouvert : croix, « Fermer », voile, page figée, barre cachée, actions visibles à 360 × 640 bandeau affiché, 44 px, fermeture au voile, au lien, à Échap', events: 'sign_up_start / login_click avec accord, rien sans' };
     for (const [k, v] of Object.entries(F)) {
       console.log(`  ${v.length ? '✗' : '✓'} ${label[k]}`);
       v.slice(0, 8).forEach((x) => console.log(`      ${x}`));
@@ -331,8 +346,9 @@ async function run(root, { quiet = false, browserOpts } = {}) {
 
 const MUTANTS = [
   ['url', 'adresse recopiée dans un composant', (r) => fs.appendFileSync(path.join(r, '_src/components/blocks.mjs'), `\n/* ${LOGIN} */\n`)],
-  ['header', '« Se connecter » après la démo', (r) => edit(r, 'index.html', /(<a class="hdr-login"[^>]*>[^<]*<\/a>)(<a class="btn btn-orange btn-sm hdr-demo"[^>]*>[^<]*<\/a>)/, '$2$1')],
-  ['header', '« Essai gratuit » revient dans l\'en-tête', (r) => edit(r, 'prix.html', /(<a class="btn btn-orange btn-sm hdr-demo"[^>]*>[^<]*<\/a>)<\/div>/, `$1<a class="btn btn-orange btn-sm hdr-trial" href="${SIGNUP}" data-app="signup" data-place="header">Essai gratuit</a></div>`)],
+  ['header', '« Se connecter » après la démo', (r) => edit(r, 'index.html', /(<a class="hdr-login"[^>]*>[^<]*<\/a>)(<a class="btn btn-orange btn-sm hdr-demo"[^>]*>[\s\S]*?<\/a>)/, '$2$1')],
+  ['header', 'libellé court retiré de l\'en-tête', (r) => edit(r, 'en/index.html', /<span class="hd-s" aria-hidden="true">[^<]*<\/span>/, '')],
+  ['header', '« Essai gratuit » revient dans l\'en-tête', (r) => edit(r, 'prix.html', /(<a class="btn btn-orange btn-sm hdr-demo"[^>]*>[\s\S]*?<\/a>)<\/div>/, `$1<a class="btn btn-orange btn-sm hdr-trial" href="${SIGNUP}" data-app="signup" data-place="header">Essai gratuit</a></div>`)],
   ['header', 'langues de nouveau côte à côte', (r) => edit(r, 'en/index.html', /<div class="drop hdr-lang">[\s\S]*?<\/div><\/div>/, '<div class="hdr-lang"><a href="../index.html">FR</a><a href="../nl/index.html">NL</a><a class="on" href="index.html">EN</a></div>')],
   ['header', '« Appeler Janet » revient dans l\'en-tête', (r) => edit(r, 'garages.html', /(<div class="hdr-cta">)/, '$1<a class="btn btn-orange btn-sm hdr-call" href="tel:+32460254413" data-call>x</a>')],
   ['header', '?lang=nl oublié', (r) => edit(r, 'nl/garages.html', 'https://app.celya.be/login?lang=nl" data-app="login" data-place="header"', 'https://app.celya.be/login" data-app="login" data-place="header"')],
@@ -353,7 +369,9 @@ const MUTANTS = [
   ['pricing', 'règle de l\'essai modifiée', (r) => edit(r, 'nl/prijzen.html', /(<div class="price-go">[\s\S]*?<small>)[^<]*/, '$130 dagen gratis.')],
   ['lp', 'connexion sur une page d\'atterrissage', (r) => edit(r, 'lp/garages.html', /(<\/footer>)/, `<a href="${LOGIN}">x</a>$1`)],
   ['layout', 'seuil du menu ramené à 1040 px', (r) => edit(r, 'celya.css', '@media (max-width:1180px){', '@media (max-width:1040px){')],
-  ['layout', 'connexion visible sous 720 px', (r) => edit(r, 'celya.css', '  .hdr-login{display:none}', '  .hdr-x{display:none}')],
+  ['layout', 'connexion de nouveau masquée sous 720 px', (r) => edit(r, 'celya.css', '  .hdr-login{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;font-size:14px}', '  .hdr-login{display:none}')],
+  ['layout', 'libellé complet masqué par display:none sous 720 px (plus de nom accessible)', (r) => edit(r, 'celya.css', '  .hdr-demo .hd-l{position:absolute!important;', '  .hdr-demo .hd-l{display:none;position:absolute!important;')],
+  ['layout', 'libellé court affiché sur ordinateur', (r) => edit(r, 'celya.css', '.hdr-demo .hd-s{display:none}', '.hdr-demo .hd-s{display:inline}')],
   ['layout', 'menu : bloc d\'accès qui déborde', (r) => edit(r, 'celya.css', '.mnav-app .btn{width:100%}', '.mnav-app .btn{width:130%}')],
   ['events', 'sign_up_start renommé', (r) => edit(r, 'celya.js', "'sign_up_start'", "'signup_start'")],
   ['events', 'place perdu', (r) => edit(r, 'celya.js', "place:app.getAttribute('data-place')||''", "place:''")],
