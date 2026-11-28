@@ -14,6 +14,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, SRC, loadData, parsePage, offreTokens, fill } from './lib/core.mjs';
 import { context } from './components/shell.mjs';
+import { enrichJsonLd } from './lib/jsonld.mjs';
+import { llms } from './lib/llms.mjs';
 
 const LAYOUTS = {};
 async function layout(name) {
@@ -36,7 +38,10 @@ export async function render(rel, data = loadData()) {
   const c = context(page, data, rel);
   const fn = await layout(page.meta.layout);
   const html = fn(c);
-  return fill(html, offreTokens(data.offre, page.meta.lang), rel);
+  const lang = page.meta.lang;
+  /* JSON-LD : "offers" de chaque Service et "sameAs" de l'Organization, depuis
+   * les données (lot du 28/11/2026, _src/lib/jsonld.mjs) */
+  return enrichJsonLd(fill(html, offreTokens(data.offre, lang), rel), { offre: data.offre, i18n: data.i18n, lang, file: rel });
 }
 
 async function main() {
@@ -63,6 +68,14 @@ async function main() {
       fs.writeFileSync(out, html);
     }
   }
+  /* /llms.txt : ce qu'est Celya, pour les assistants IA (28/11/2026), écrit
+   * depuis data/offre.json comme les pages */
+  const txt = llms(data);
+  const llmsOut = path.join(ROOT, 'llms.txt');
+  if (check) {
+    const cur = fs.existsSync(llmsOut) ? fs.readFileSync(llmsOut, 'utf8') : null;
+    if (cur !== txt) { diff++; console.log('  diffère : llms.txt'); }
+  } else fs.writeFileSync(llmsOut, txt);
   if (check) {
     console.log(diff ? `\n${diff} page(s) publiée(s) ne correspondent pas au générateur : lancer node _src/build.mjs` : `  ${todo.length} page(s) : conformes au générateur`);
     process.exit(diff ? 1 : 0);

@@ -745,6 +745,47 @@ et 360 × 640, iPhone Safari, barre visible) :
   aucun `filter:` sur un élément qui bouge, aucun écouteur nouveau (le bandeau
   passe par le `onResize` commun).
 
+## Les prix dans le SEO et pour les assistants IA (lot du 28 novembre 2026)
+
+Demande de Bora du 28/11/2026. Tout passe par le générateur, rien n'est écrit
+page par page ni en dur :
+
+- **JSON-LD** (`_src/lib/jsonld.mjs`, appelé par `render()` après les jetons) :
+  chaque nœud `Service` reçoit `offers`, un `AggregateOffer` (lowPrice et
+  highPrice de la grille, `offerCount`, EUR, `url` = la page prix de la
+  langue). **« Hors TVA » ne s'écrit que dans une `priceSpecification`**
+  (décision de Bora du 28/11/2026, zéro avertissement au validateur
+  schema.org) : celle de l'`AggregateOffer` (`UnitPriceSpecification`,
+  minPrice / maxPrice, `MON`, `valueAddedTaxIncluded: false`) et celle de
+  chaque `Offer`, jamais sur une offre elle-même. Sur `prix.html`,
+  `nl/prijzen.html` et `en/pricing.html`, les trois `Offer` déjà écrites
+  passent dans cet `AggregateOffer`, avec une `description` (minutes, « pour », contenu de la
+  carte, textes de `data/offre.json`) et une `url` vers la carte
+  (`#formule-<id>`, id posé par `priceCards(c, { anchors: true })`). L'
+  `Organization` reçoit `sameAs` (Instagram, TikTok ; pas de Facebook tant que
+  son lien n'est pas dans le pied de page). Le JSON-LD ressort à la même mise
+  en forme qu'avant : une page sans `Service` ne change que par `sameAs`.
+- **Aucun `Service` ne porte `availableLanguage` ni `inLanguage`** (décision
+  de Bora du 28/11/2026 : schema.org ne les connaît pas sur un `Service`,
+  avertissements du validateur). Retirés des sources des 35 pages. La langue
+  reste dite par le texte, le `WebSite` / `WebPage` et l'`availableLanguage`
+  du `contactPoint` de l'`Organization`, qui ne bouge pas.
+  `tests/prix-seo.mjs` échoue si l'une revient ou si le `contactPoint` perd la
+  sienne. Validateur schema.org au 28/11/2026 : 0 erreur, 0 avertissement sur
+  les 35 pages `Service`.
+- **`/llms.txt`** est écrit par `node _src/build.mjs` (`_src/lib/llms.mjs`)
+  depuis `data/offre.json`, et `--check` le compare comme une page. Ne pas
+  l'éditer à la main.
+- **Meta description des trois accueils** : « dès … HT par mois » par le jeton
+  `{{offre.min_eur}}`, sous 158 caractères (`check.py`).
+- **Sitemap** : chaque URL porte `<lastmod>`, la date du dernier commit qui a
+  touché la page, ou la date du jour si elle a changé depuis.
+- **`tests/prix-seo.mjs`** échoue sur tout montant en euros hors grille (texte
+  et JSON-LD, listes et plages lues nombre par nombre ; les montants qui ne
+  sont pas des prix de Celya sont listés page par page avec leur raison dans
+  `HORS_GRILLE`), sur un `Service` sans `offers` et sur une page prix
+  incomplète. `--mutants` vérifie qu'il crie sur une copie cassée.
+
 ## Budget de rendu (lot performance du 5 septembre 2026)
 
 Le site n'est pas lourd, il était occupé : la décoration saturait le GPU et le
@@ -805,6 +846,8 @@ node tests/attribution.mjs           # UTM / gclid / fbclid : session sans accor
 node tests/tiret-long.mjs            # aucun tiret long dans les fichiers servis, _src/ et data/ (19/11/2026)
 node tests/acces-app.mjs             # Se connecter / Essai gratuit, menu mobile (23/11) : liens, ordre, cadre, fermeture, événements
 node tests/acces-app.mjs --mutants   # chaque vérification ci-dessus crie sur une copie cassée
+node tests/prix-seo.mjs              # aucun montant hors grille (texte, JSON-LD, llms.txt), offers sur chaque Service (28/11/2026)
+node tests/prix-seo.mjs --mutants    # chaque vérification ci-dessus crie sur une copie cassée
 ```
 
 **Le générateur (lot du 14/11/2026).** Les pages migrées ne s'éditent plus à

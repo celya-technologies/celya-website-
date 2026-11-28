@@ -5,6 +5,25 @@
     "Formule per formule, regel per regel.",
     "Plan by plan, line by line."
   ],
+  "graph_ajouts": {
+    "_doc": "Lot « prix dans le SEO et pour les assistants IA » du 28/11/2026 (demande de Bora) : propriétés ajoutées par le générateur (_src/lib/jsonld.mjs) à un nœud qui ne les portait pas. Elles sont ignorées à la comparaison seulement si l'ancien nœud ne les avait pas ; toute autre différence du nœud reste un écart.",
+    "Service": [
+      "offers"
+    ],
+    "_Service": "AggregateOffer de la grille (data/offre.json), vers la page prix de la langue",
+    "Organization": [
+      "sameAs"
+    ],
+    "_Organization": "comptes Instagram et TikTok de la marque"
+  },
+  "graph_retraits": {
+    "_doc": "Propriétés retirées d'un type de nœud sur tout le site, sur décision datée de Bora. Elles sont ignorées dans l'ancien nœud seulement si le nouveau ne les porte plus ; toute autre différence du nœud reste un écart.",
+    "Service": [
+      "availableLanguage",
+      "inLanguage"
+    ],
+    "_Service": "décision de Bora du 28/11/2026 : schema.org ne connaît ni availableLanguage ni inLanguage sur un Service (avertissements du validateur schema.org) ; la langue reste dite par le texte, le WebSite / WebPage et l'availableLanguage du contactPoint, qui ne bouge pas. tests/prix-seo.mjs échoue si l'une revient sur un Service."
+  },
   "pages": {
     "index.html": {
       "faq": {
@@ -18,7 +37,8 @@
       "graph_retires": [
         "VideoObject"
       ],
-      "_graph_retires": "vidéo celya-intro retirée du site le 16/11/2026 (décision de Bora : ancien C néon, une nouvelle vidéo est prévue)"
+      "_graph_retires": "vidéo celya-intro retirée du site le 16/11/2026 (décision de Bora : ancien C néon, une nouvelle vidéo est prévue)",
+      "desc": "« dès 49 € HT par mois » ajouté (montant lu dans data/offre.json, {{offre.min_eur}}) ; « Agent vocal, FR et NL. » retiré pour rester sous 158 caractères. Demande de Bora du 28/11/2026"
     },
     "prix.html": {
       "faq": {
@@ -43,7 +63,8 @@
       "graph_retires": [
         "VideoObject"
       ],
-      "_graph_retires": "vidéo celya-intro retirée du site le 16/11/2026 (décision de Bora : ancien C néon, une nouvelle vidéo est prévue)"
+      "_graph_retires": "vidéo celya-intro retirée du site le 16/11/2026 (décision de Bora : ancien C néon, une nouvelle vidéo est prévue)",
+      "desc": "« vanaf 49 € excl. btw per maand » ajouté ({{offre.min_eur}}) ; « 24/7 » et « Test: +32 460 25 44 13. » retirés pour rester sous 158 caractères. Demande de Bora du 28/11/2026"
     },
     "en/index.html": {
       "h2_retires": [
@@ -57,7 +78,8 @@
       "graph_retires": [
         "VideoObject"
       ],
-      "_graph_retires": "vidéo celya-intro retirée du site le 16/11/2026 (décision de Bora : ancien C néon, une nouvelle vidéo est prévue)"
+      "_graph_retires": "vidéo celya-intro retirée du site le 16/11/2026 (décision de Bora : ancien C néon, une nouvelle vidéo est prévue)",
+      "desc": "« from €49 excl. VAT a month » ajouté ({{offre.min_eur}}) ; « FR, NL and EN » devient « FR and NL » (aucune promesse de service au-delà de FR + NL, CLAUDE.md) et « Try: +32 460 25 44 13. » retiré pour la longueur. Demande de Bora du 28/11/2026"
     },
     "nl/prijzen.html": {
       "desc": "ancienne grille dans la description : montants lus dans data/offre.json",
