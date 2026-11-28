@@ -6,8 +6,10 @@
  * tout le site, ce qui vient des données :
  *
  *  - chaque nœud Service reçoit "offers" : un AggregateOffer (prix le plus bas,
- *    le plus haut, nombre de formules, hors TVA) qui renvoie à la page prix de
- *    la langue. Sur les pages prix, les trois Offer déjà écrites passent dans
+ *    le plus haut, nombre de formules) qui renvoie à la page prix de la
+ *    langue ; « hors TVA » vit dans sa priceSpecification, seul endroit où
+ *    schema.org le connaît. Sur les pages prix, les trois Offer déjà écrites
+ *    (hors TVA dans leur propre priceSpecification) passent dans
  *    cet AggregateOffer, chacune complétée d'une description (minutes et
  *    contenu de la formule, les textes de la carte de prix) et de l'URL de sa
  *    carte (#formule-<id>) ;
@@ -61,8 +63,18 @@ function offers(offre, lang, t, existantes, file) {
     highPrice: Math.max(...prix),
     priceCurrency: 'EUR',
     offerCount: F.length,
-    valueAddedTaxIncluded: false,
     url: PRIX_URL[lang],
+    /* hors TVA : schema.org ne connaît valueAddedTaxIncluded que sur une
+     * PriceSpecification (décision de Bora du 28/11/2026 : zéro avertissement
+     * au validateur schema.org) ; la fourchette est mensuelle, comme les Offer */
+    priceSpecification: {
+      '@type': 'UnitPriceSpecification',
+      minPrice: Math.min(...prix),
+      maxPrice: Math.max(...prix),
+      priceCurrency: 'EUR',
+      valueAddedTaxIncluded: false,
+      unitCode: 'MON',
+    },
   };
   if (existantes) {
     const liste = Array.isArray(existantes) ? existantes : [existantes];
@@ -70,7 +82,8 @@ function offers(offre, lang, t, existantes, file) {
     agg.offers = liste.map((o) => {
       const f = F.find((x) => x.nom[lang] === o.name);
       if (!f) throw new Error(`${file} : Offer « ${o.name} » ne correspond à aucune formule de data/offre.json`);
-      const { '@type': type, name, ...reste } = o;
+      const { '@type': type, name, valueAddedTaxIncluded, ...reste } = o;
+      if (valueAddedTaxIncluded !== undefined) throw new Error(`${file} : valueAddedTaxIncluded sur l'Offer « ${o.name} » : il va dans sa priceSpecification`);
       return { '@type': type, name, description: offreDescription(f, lang, t), url: `${PRIX_URL[lang]}#${ancre(f)}`, ...reste };
     });
   }

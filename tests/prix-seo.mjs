@@ -13,7 +13,9 @@
  *     est un prix de la grille ;
  *  3. tout nœud Service porte "offers" : un AggregateOffer (lowPrice = le prix
  *     le plus bas, highPrice = le plus haut, offerCount = nombre de formules,
- *     EUR, hors TVA, url = la page prix de la langue) ;
+ *     EUR, url = la page prix de la langue, et « hors TVA » dans sa
+ *     priceSpecification mensuelle : valueAddedTaxIncluded ne vit que dans une
+ *     PriceSpecification, jamais sur une offre) ;
  *  4. sur les pages prix, cet AggregateOffer contient les Offer de chaque
  *     formule : bon prix pour le nom, une description qui donne les minutes,
  *     une url vers l'ancre de la carte, ancre présente dans la page, et la
@@ -106,6 +108,8 @@ export function checkPage(rel, html, lang) {
   texteMontants(rel, dec(sansScripts), err);
   const graph = graphOf(html, err);
   walk(graph, (o) => {
+    /* hors TVA : seulement dans une PriceSpecification (schema.org ; 28/11/2026) */
+    if ('valueAddedTaxIncluded' in o && !/PriceSpecification$/.test(o['@type'] || '')) err.push(`JSON-LD ${o['@type']}.valueAddedTaxIncluded : sa place est dans une priceSpecification`);
     for (const k of ['price', 'lowPrice', 'highPrice', 'minPrice', 'maxPrice']) {
       if (k in o && !PRIX.includes(valeur(String(o[k])))) err.push(`JSON-LD ${o['@type']}.${k} = ${o[k]} : hors grille (${PRIX.join(' / ')})`);
     }
@@ -114,8 +118,11 @@ export function checkPage(rel, html, lang) {
     const a = n.offers;
     if (!a) { err.push(`Service ${n['@id'] || ''} sans "offers"`); continue; }
     if (a['@type'] !== 'AggregateOffer') { err.push(`Service ${n['@id'] || ''} : offers n'est pas un AggregateOffer`); continue; }
-    const attendu = { lowPrice: Math.min(...PRIX), highPrice: Math.max(...PRIX), priceCurrency: 'EUR', offerCount: F.length, valueAddedTaxIncluded: false, url: PRIX_URL[lang] };
+    const attendu = { lowPrice: Math.min(...PRIX), highPrice: Math.max(...PRIX), priceCurrency: 'EUR', offerCount: F.length, url: PRIX_URL[lang] };
     for (const [k, v] of Object.entries(attendu)) if (a[k] !== v) err.push(`AggregateOffer.${k} = ${JSON.stringify(a[k])}, attendu ${JSON.stringify(v)}`);
+    const aps = a.priceSpecification || {};
+    const apsAttendu = { '@type': 'UnitPriceSpecification', minPrice: Math.min(...PRIX), maxPrice: Math.max(...PRIX), priceCurrency: 'EUR', valueAddedTaxIncluded: false, unitCode: 'MON' };
+    for (const [k, v] of Object.entries(apsAttendu)) if (aps[k] !== v) err.push(`AggregateOffer.priceSpecification.${k} = ${JSON.stringify(aps[k])}, attendu ${JSON.stringify(v)}`);
     if (PAGES_PRIX[rel]) {
       const liste = a.offers || [];
       if (liste.length !== F.length) err.push(`page prix : ${liste.length} Offer dans l'AggregateOffer, ${F.length} attendues`);
@@ -127,7 +134,7 @@ export function checkPage(rel, html, lang) {
         const ancre = (o.url || '').split('#')[1];
         if (!o.url || !o.url.startsWith(PRIX_URL[lang] + '#') || !html.includes(`id="${ancre}"`)) err.push(`Offer « ${o.name} » : url ${o.url} sans ancre présente dans la page`);
         const ps = o.priceSpecification || {};
-        if (ps['@type'] !== 'UnitPriceSpecification' || ps.unitCode !== 'MON' || valeur(String(ps.price)) !== f.prix_ht) err.push(`Offer « ${o.name} » : référence mensuelle (UnitPriceSpecification, MON, ${f.prix_ht}) absente`);
+        if (ps['@type'] !== 'UnitPriceSpecification' || ps.unitCode !== 'MON' || valeur(String(ps.price)) !== f.prix_ht || ps.valueAddedTaxIncluded !== false) err.push(`Offer « ${o.name} » : référence mensuelle hors TVA (UnitPriceSpecification, MON, ${f.prix_ht}, valueAddedTaxIncluded false) absente`);
       }
     }
   }
@@ -185,6 +192,8 @@ function mutants() {
     ['url d\'AggregateOffer vers la mauvaise langue', () => checkPage('nl/index.html', sub(P['nl/index.html'].html, '"url": "https://celya.be/nl/prijzen.html"', '"url": "https://celya.be/prix.html"'), 'nl')],
     ['ancre de formule absente', () => checkPage('prix.html', sub(P['prix.html'].html, 'id="formule-pro"', ''), 'fr')],
     ['sameAs absent', () => checkPage('a-propos.html', P['a-propos.html'].html.replace(/, "sameAs": \[[^\]]*\]/, ''), 'fr')],
+    ['hors TVA remonté sur l\'AggregateOffer', () => checkPage('index.html', sub(P['index.html'].html, '"url": "https://celya.be/prix.html", "priceSpecification"', '"url": "https://celya.be/prix.html", "valueAddedTaxIncluded": false, "priceSpecification"'), 'fr')],
+    ['hors TVA retiré de la priceSpecification', () => checkPage('index.html', sub(P['index.html'].html, '"priceCurrency": "EUR", "valueAddedTaxIncluded": false, "unitCode": "MON"}}', '"priceCurrency": "EUR", "unitCode": "MON"}}'), 'fr')],
     ['llms.txt : prix faux', () => checkLlms(fs.readFileSync(path.join(ROOT, 'llms.txt'), 'utf8').replace('99 € HT', '89 € HT'))],
   ];
   let bad = 0;

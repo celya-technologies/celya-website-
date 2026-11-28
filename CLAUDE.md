@@ -752,10 +752,14 @@ page par page ni en dur :
 
 - **JSON-LD** (`_src/lib/jsonld.mjs`, appelé par `render()` après les jetons) :
   chaque nœud `Service` reçoit `offers`, un `AggregateOffer` (lowPrice et
-  highPrice de la grille, `offerCount`, EUR, `valueAddedTaxIncluded: false`,
-  `url` = la page prix de la langue). Sur `prix.html`, `nl/prijzen.html` et
-  `en/pricing.html`, les trois `Offer` déjà écrites passent dans cet
-  `AggregateOffer`, avec une `description` (minutes, « pour », contenu de la
+  highPrice de la grille, `offerCount`, EUR, `url` = la page prix de la
+  langue). **« Hors TVA » ne s'écrit que dans une `priceSpecification`**
+  (décision de Bora du 28/11/2026, zéro avertissement au validateur
+  schema.org) : celle de l'`AggregateOffer` (`UnitPriceSpecification`,
+  minPrice / maxPrice, `MON`, `valueAddedTaxIncluded: false`) et celle de
+  chaque `Offer`, jamais sur une offre elle-même. Sur `prix.html`,
+  `nl/prijzen.html` et `en/pricing.html`, les trois `Offer` déjà écrites
+  passent dans cet `AggregateOffer`, avec une `description` (minutes, « pour », contenu de la
   carte, textes de `data/offre.json`) et une `url` vers la carte
   (`#formule-<id>`, id posé par `priceCards(c, { anchors: true })`). L'
   `Organization` reçoit `sameAs` (Instagram, TikTok ; pas de Facebook tant que
