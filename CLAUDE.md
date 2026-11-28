@@ -765,6 +765,14 @@ page par page ni en dur :
   `Organization` reçoit `sameAs` (Instagram, TikTok ; pas de Facebook tant que
   son lien n'est pas dans le pied de page). Le JSON-LD ressort à la même mise
   en forme qu'avant : une page sans `Service` ne change que par `sameAs`.
+- **Aucun `Service` ne porte `availableLanguage` ni `inLanguage`** (décision
+  de Bora du 28/11/2026 : schema.org ne les connaît pas sur un `Service`,
+  avertissements du validateur). Retirés des sources des 35 pages. La langue
+  reste dite par le texte, le `WebSite` / `WebPage` et l'`availableLanguage`
+  du `contactPoint` de l'`Organization`, qui ne bouge pas.
+  `tests/prix-seo.mjs` échoue si l'une revient ou si le `contactPoint` perd la
+  sienne. Validateur schema.org au 28/11/2026 : 0 erreur, 0 avertissement sur
+  les 35 pages `Service`.
 - **`/llms.txt`** est écrit par `node _src/build.mjs` (`_src/lib/llms.mjs`)
   depuis `data/offre.json`, et `--check` le compare comme une page. Ne pas
   l'éditer à la main.

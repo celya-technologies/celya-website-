@@ -16,6 +16,14 @@
     ],
     "_Organization": "comptes Instagram et TikTok de la marque"
   },
+  "graph_retraits": {
+    "_doc": "Propriétés retirées d'un type de nœud sur tout le site, sur décision datée de Bora. Elles sont ignorées dans l'ancien nœud seulement si le nouveau ne les porte plus ; toute autre différence du nœud reste un écart.",
+    "Service": [
+      "availableLanguage",
+      "inLanguage"
+    ],
+    "_Service": "décision de Bora du 28/11/2026 : schema.org ne connaît ni availableLanguage ni inLanguage sur un Service (avertissements du validateur schema.org) ; la langue reste dite par le texte, le WebSite / WebPage et l'availableLanguage du contactPoint, qui ne bouge pas. tests/prix-seo.mjs échoue si l'une revient sur un Service."
+  },
   "pages": {
     "index.html": {
       "faq": {

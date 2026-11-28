@@ -163,10 +163,20 @@ export function compare(rel, before, after) {
     for (const p of props) if (!(p in n)) delete o[p];
     return o;
   };
+  /* propriétés retirées à tout le site sur décision datée (graph_retraits,
+   * 28/11/2026) : ignorées dans l'ancien nœud seulement si le nouveau ne les
+   * porte plus ; toute autre différence reste un écart */
+  const retrait = (n, a) => {
+    const props = (CORR.graph_retraits || {})[n['@type']] || [];
+    if (!props.length) return n;
+    const o = { ...n };
+    for (const p of props) if (!(p in a)) delete o[p];
+    return o;
+  };
   const gone = corr.graph_retires || [];   /* nœuds retirés sur décision datée (ex. VideoObject de celya-intro) */
   for (const [kk, n] of B) {
     if (!A.has(kk)) { if (!gone.includes(n['@type'])) err.push(`@graph : nœud disparu ${kk}`); }
-    else if (!same(n, ajout(n, A.get(kk))) && !allowed.includes(n['@type']) && !(n['@type'] === 'FAQPage' && corr.faq)) err.push(`@graph : nœud modifié ${kk}`);
+    else if (!same(retrait(n, A.get(kk)), ajout(n, A.get(kk))) && !allowed.includes(n['@type']) && !(n['@type'] === 'FAQPage' && corr.faq)) err.push(`@graph : nœud modifié ${kk}`);
   }
   for (const kk of A.keys()) if (!B.has(kk)) err.push(`@graph : nœud ajouté ${kk}`);
   return err;

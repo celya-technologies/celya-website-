@@ -21,6 +21,9 @@
  *     une url vers l'ancre de la carte, ancre présente dans la page, et la
  *     référence mensuelle (UnitPriceSpecification, unitCode MON) ;
  *  5. l'Organization porte "sameAs" ;
+ *  5 bis. aucun Service ne porte availableLanguage ni inLanguage (décision de
+ *     Bora du 28/11/2026 : schema.org ne les connaît pas sur un Service) ; le
+ *     contactPoint de l'Organization garde son availableLanguage ;
  *  6. /llms.txt donne chaque formule avec son prix et ses minutes, et est à
  *     jour (node _src/build.mjs --check le vérifie aussi).
  *
@@ -115,6 +118,7 @@ export function checkPage(rel, html, lang) {
     }
   });
   for (const n of graph.filter((x) => x['@type'] === 'Service')) {
+    for (const k of ['availableLanguage', 'inLanguage']) if (k in n) err.push(`Service ${n['@id'] || ''} : « ${k} » n'est pas une propriété de Service (retirée le 28/11/2026)`);
     const a = n.offers;
     if (!a) { err.push(`Service ${n['@id'] || ''} sans "offers"`); continue; }
     if (a['@type'] !== 'AggregateOffer') { err.push(`Service ${n['@id'] || ''} : offers n'est pas un AggregateOffer`); continue; }
@@ -139,6 +143,7 @@ export function checkPage(rel, html, lang) {
     }
   }
   const org = graph.find((x) => x['@type'] === 'Organization' && x['@id'] === 'https://celya.be/#organization');
+  if (org && !(org.contactPoint || []).some((c) => Array.isArray(c.availableLanguage) && c.availableLanguage.length)) err.push('Organization : le contactPoint a perdu son availableLanguage');
   if (org && JSON.stringify(org.sameAs) !== JSON.stringify(SAME_AS)) err.push(`Organization.sameAs = ${JSON.stringify(org.sameAs)}, attendu ${JSON.stringify(SAME_AS)}`);
   return err;
 }
@@ -194,6 +199,9 @@ function mutants() {
     ['sameAs absent', () => checkPage('a-propos.html', P['a-propos.html'].html.replace(/, "sameAs": \[[^\]]*\]/, ''), 'fr')],
     ['hors TVA remonté sur l\'AggregateOffer', () => checkPage('index.html', sub(P['index.html'].html, '"url": "https://celya.be/prix.html", "priceSpecification"', '"url": "https://celya.be/prix.html", "valueAddedTaxIncluded": false, "priceSpecification"'), 'fr')],
     ['hors TVA retiré de la priceSpecification', () => checkPage('index.html', sub(P['index.html'].html, '"priceCurrency": "EUR", "valueAddedTaxIncluded": false, "unitCode": "MON"}}', '"priceCurrency": "EUR", "unitCode": "MON"}}'), 'fr')],
+    ['availableLanguage revenu sur un Service', () => checkPage('index.html', sub(P['index.html'].html, '"@id": "https://celya.be/#service"', '"availableLanguage": ["fr", "nl"], "@id": "https://celya.be/#service"'), 'fr')],
+    ['inLanguage revenu sur un Service', () => checkPage('prix.html', sub(P['prix.html'].html, '"@id": "https://celya.be/prix.html#service"', '"@id": "https://celya.be/prix.html#service", "inLanguage": "fr-BE"'), 'fr')],
+    ['availableLanguage perdu dans le contactPoint', () => checkPage('a-propos.html', P['a-propos.html'].html.replace(/("contactType": "customer service", "email": "sales@celya\.be", "areaServed": "BE"), "availableLanguage": \[[^\]]*\]/, '$1'), 'fr')],
     ['llms.txt : prix faux', () => checkLlms(fs.readFileSync(path.join(ROOT, 'llms.txt'), 'utf8').replace('99 € HT', '89 € HT'))],
   ];
   let bad = 0;
