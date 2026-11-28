@@ -154,10 +154,19 @@ export function compare(rel, before, after) {
   /* @graph */
   const B = new Map(before.graph.map((n) => [key(n), n])), A = new Map(after.graph.map((n) => [key(n), n]));
   const allowed = corr.graph || [];
+  /* propriétés ajoutées par le générateur à tout le site (graph_ajouts, lot du
+   * 28/11/2026) : ignorées seulement si l'ancien nœud ne les portait pas */
+  const ajout = (n, a) => {
+    const props = (CORR.graph_ajouts || {})[n['@type']] || [];
+    if (!props.length) return a;
+    const o = { ...a };
+    for (const p of props) if (!(p in n)) delete o[p];
+    return o;
+  };
   const gone = corr.graph_retires || [];   /* nœuds retirés sur décision datée (ex. VideoObject de celya-intro) */
   for (const [kk, n] of B) {
     if (!A.has(kk)) { if (!gone.includes(n['@type'])) err.push(`@graph : nœud disparu ${kk}`); }
-    else if (!same(n, A.get(kk)) && !allowed.includes(n['@type']) && !(n['@type'] === 'FAQPage' && corr.faq)) err.push(`@graph : nœud modifié ${kk}`);
+    else if (!same(n, ajout(n, A.get(kk))) && !allowed.includes(n['@type']) && !(n['@type'] === 'FAQPage' && corr.faq)) err.push(`@graph : nœud modifié ${kk}`);
   }
   for (const kk of A.keys()) if (!B.has(kk)) err.push(`@graph : nœud ajouté ${kk}`);
   return err;

@@ -5,6 +5,7 @@ import { ico, cVoice } from './icons.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { esc, strip, eur, num, ROOT } from '../lib/core.mjs';
+import { ancre } from '../lib/jsonld.mjs';
 import { trialBtn } from './shell.mjs';
 
 const H = (lvl, html, attrs = '') => `<h${lvl}${attrs}>${html}</h${lvl}>`;
@@ -241,14 +242,16 @@ export function priceNote(c) {
   return [r.ht, r.decompte, r.mise_en_service, r.au_dela, r.meta].map((x) => x[lang]).join(' · ') + '.';
 }
 
-export function priceCards(c, { swipe = false } = {}) {
+/** anchors (page prix seulement, 28/11/2026) : chaque carte porte l'id de sa
+ *  formule (#formule-<id>), la cible de l'"url" de son Offer dans le JSON-LD */
+export function priceCards(c, { swipe = false, anchors = false } = {}) {
   const { t, offre, lang } = c;
   /* swipe (pages d'atterrissage, 23/11/2026) : sous 720 px, un carrousel
    * horizontal, une carte par écran, scroll-snap, la carte recommandée au
    * centre au départ (celya.js), les cartes voisines qui dépassent et trois
    * points dessous pour dire qu'on peut balayer ; au-dessus, rien ne change */
   const dots = swipe ? `<p class="pc-dots" aria-hidden="true">${offre.formules.map((f) => `<i${f.recommandee ? ' class="on"' : ''}></i>`).join('')}</p>` : '';
-  return `<div class="prices${swipe ? ' prices-swipe' : ''}">${offre.formules.map((f) => `<article class="pc${f.recommandee ? ' pc-ink' : ''}">
+  return `<div class="prices${swipe ? ' prices-swipe' : ''}">${offre.formules.map((f) => `<article class="pc${f.recommandee ? ' pc-ink' : ''}"${anchors ? ` id="${ancre(f)}"` : ''}>
 <p class="pc-top"><span class="label">${f.nom[lang]}</span>${f.recommandee ? `<span class="pc-reco">${t.price_reco}</span>` : ''}</p>
 <p class="pc-price"><b>${eur(f.prix_ht, lang)}</b><span>${t.price_per}</span></p>
 <p class="pc-min">${num(f.minutes, lang)} ${t.price_minutes}</p>

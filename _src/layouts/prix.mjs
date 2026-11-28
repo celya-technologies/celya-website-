@@ -105,7 +105,7 @@ export default function prix(c) {
       const F = splitH2(b.html);
       out += `<section class="sec bg-cream"><div class="w">
 <div class="two">${kick(b) ? `<div>${kick(b)}${F.h2}</div>` : F.h2}<div class="prose">${F.body}</div></div>
-${priceCards(c)}
+${priceCards(c, { anchors: true })}
 <div class="price-foot"><p class="note">${priceNote(c)}</p>${priceGo(c)}</div>
 </div></section>`;
     } else if (b.name === 'section' && r === 'tableau') {

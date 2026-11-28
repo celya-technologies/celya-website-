@@ -8,13 +8,16 @@ Le format reproduit celui du sitemap publié, à la balise près :
     <urlset xmlns="…/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
       <url>
         <loc>https://celya.be/prix.html</loc>
+        <lastmod>2026-11-28</lastmod>
         <xhtml:link rel="alternate" hreflang="fr-BE" href="…"/>
         …
       </url>
     </urlset>
 
-Pas de lastmod, pas de changefreq, pas de priority : le sitemap publié n'en a
-jamais eu. Les <xhtml:link> ne sont pas déduits : ils recopient, dans l'ordre,
+Chaque <url> porte un <lastmod> depuis le 28/11/2026 : la date du dernier
+commit qui a touché la page (git log), ou, si la page a changé depuis ce commit
+(ou n'est pas encore versionnée, ou git n'est pas là), la date du jour, celle
+du build. Pas de changefreq, pas de priority. Les <xhtml:link> ne sont pas déduits : ils recopient, dans l'ordre,
 les <link rel="alternate" hreflang="…"> de la page elle-même — c'est ce que fait
 le sitemap actuel sur ses 281 URL, vérifié une par une.
 
@@ -30,9 +33,11 @@ Sortie 0 = propre, 1 = anomalie (rien n'est écrit). Bibliothèque standard uniq
 
 from __future__ import annotations
 
+import datetime
 import json
 import os
 import re
+import subprocess
 import sys
 from html.parser import HTMLParser
 
@@ -174,13 +179,42 @@ def ordonne(retenues):
     return sorted(retenues, key=lambda c: (rang.get(c[0], len(ACCUEILS)), url_de(c[0])))
 
 
+def dates_git():
+    """{chemin: date AAAA-MM-JJ du dernier commit qui l'a touché} et l'ensemble
+    des chemins modifiés depuis HEAD (ou non versionnés). ({}, None) sans git."""
+    try:
+        journal = subprocess.run(["git", "log", "--format=@%cs", "--name-only", "HEAD"],
+                                 cwd=RACINE, capture_output=True, text=True, check=True).stdout
+        etat = subprocess.run(["git", "status", "--porcelain", "--untracked-files=all"],
+                              cwd=RACINE, capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return {}, None
+    dates, date = {}, None
+    for ligne in journal.splitlines():
+        if ligne.startswith("@"):
+            date = ligne[1:]
+        elif ligne and ligne not in dates:
+            dates[ligne] = date
+    modifies = {l[3:].split(" -> ")[-1].strip('"') for l in etat.splitlines() if len(l) > 3}
+    return dates, modifies
+
+
+def lastmod(rel, dates, modifies):
+    """Date du dernier changement réel de la page ; à défaut, la date du build."""
+    if modifies is None or rel in modifies or rel not in dates:
+        return datetime.date.today().isoformat()
+    return dates[rel]
+
+
 def compose(retenues):
     lignes = ['<?xml version="1.0" encoding="UTF-8"?>',
               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
               ' xmlns:xhtml="http://www.w3.org/1999/xhtml">']
+    dates, modifies = dates_git()
     for rel, tete in retenues:
         lignes.append("  <url>")
         lignes.append("    <loc>%s</loc>" % echappe(url_de(rel)))
+        lignes.append("    <lastmod>%s</lastmod>" % lastmod(rel, dates, modifies))
         for hreflang, href in tete.alternates:
             lignes.append('    <xhtml:link rel="alternate" hreflang="%s" href="%s"/>'
                           % (echappe(hreflang), echappe(href)))
